@@ -20,3 +20,8 @@ Si al revisar te falta alguna parte, no es un fracaso. Es una iteración más. L
 
 Cuando cierres estos entregables, estarás listo para Midlevel, donde el foco pasa a integración más profunda, sincronización robusta y calidad/rendimiento a escala mayor.
 
+Desde el refuerzo del curso, este cierre también debe dejar explícitamente la versión v1.0 de RuralGO FieldOps. Eso significa que tu entrega Junior ya no es un conjunto de prácticas separadas, sino un primer producto usable con alcance acotado y evidencia verificable.
+
+Para considerar v1.0 aceptada en Junior, además de los entregables anteriores, debes demostrar autenticación funcional de entrada, navegación entre lista y detalle de tareas, persistencia local mínima para continuidad de uso y una base de pruebas que cubra al menos los flujos críticos de UI y ViewModel.
+
+La evidencia mínima de v1.0 debe incluir un repositorio ejecutable, captura de ejecución navegando el flujo principal, reporte de pruebas pasando y una explicación breve de dos decisiones técnicas que tomaste para mantener el código evolutivo.

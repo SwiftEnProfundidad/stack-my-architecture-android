@@ -61,3 +61,27 @@
 | D12-04 | Día 12 | Maestría módulo 03 mapa de dependencias y acoplamiento circular | Completado | Estrategia para detectar y romper ciclos entre features manteniendo autonomía de contexto | D12-03 |
 | D12-05 | Día 12 | Auditoría pedagógica crítica Senior/Maestría | Completado | Diagnóstico formal de brechas narrativas, técnicas y de continuidad en `00-informe/REVISION-PEDAGOGICA.md` | D12-04 |
 | D12-06 | Día 12 | Reescritura profunda lecciones con caída detectada | Completado | Revisión y ampliación en `03-senior/05`, `03-senior/06`, `03-senior/07`, `04-maestria/02` y `04-maestria/03` | D12-05 |
+| D12-07 | Día 12 | Maestría módulo 04 migraciones transversales sin bloqueo | Completado | Estrategia de migración evolutiva con contratos duales, adaptadores y telemetría de adopción | D12-06 |
+| D12-08 | Día 12 | Maestría módulo 05 coordinación release, rollback y comunicación técnica | Completado | Operación de migraciones en producción con rollout progresivo y rollback controlado | D12-07 |
+| D12-09 | Día 12 | Maestría módulo 06 evolución multi-equipo y gobernanza trimestral | Completado | Marco de coordinación entre squads con gates de salud técnica compartidos | D12-08 |
+| D12-10 | Día 12 | Maestría módulo 07 defensa técnica del proyecto Android | Completado | Guía práctica para defender decisiones arquitectónicas y operativas con evidencia | D12-09 |
+| D12-11 | Día 12 | Maestría módulo 08 cierre final y publicación en Play Store | Completado | Cierre de release, preparación de publicación y criterios de sostenibilidad en producción | D12-10 |
+| D12-12 | Día 12 | Maestría módulo 09 rúbrica final y entrevista técnica Android | Completado | Preparación para evaluación final con simulación de decisiones bajo presión | D12-11 |
+| D12-13 | Día 12 | Maestría módulo 10 plan de 90 días después del curso | Completado | Ruta de consolidación profesional con foco en hábitos técnicos sostenibles | D12-12 |
+| D12-14 | Día 12 | Maestría módulo 11 epílogo profesional y siguientes retos | Completado | Cierre narrativo orientado a continuidad real de aprendizaje y ejecución en equipos | D12-13 |
+| D12-15 | Día 12 | Maestría módulo 12 casos reales y antipatrones de equipos Android | Completado | Diagnóstico práctico de errores sistémicos y criterios de prevención aplicables | D12-14 |
+| D12-16 | Día 12 | Maestría módulo 13 operación largo plazo y deuda técnica | Completado | Marco para sostener fiabilidad y evolución evitando degradación estructural | D12-15 |
+| D12-17 | Día 12 | Maestría módulo 14 primer año en equipo Android real | Completado | Guía de maduración técnica y colaboración efectiva en contexto productivo | D12-16 |
+| D12-18 | Día 12 | Maestría módulo 15 mapa de carrera Android junior→senior | Completado | Modelo de crecimiento profesional con hitos técnicos verificables | D12-17 |
+| D12-19 | Día 12 | Maestría módulo 16 cierre definitivo del recorrido Android | Completado | Síntesis final de criterios de diseño, operación y evolución profesional | D12-18 |
+| D12-20 | Día 12 | Anexo proyecto final Android | Completado | Documento integrador de alcance, criterios de aceptación y evidencia final | D12-19 |
+| D12-21 | Día 12 | Anexo guía de publicación Play Store real | Completado | Guía operativa de publicación, riesgos y validaciones previas al release | D12-20 |
+| D12-22 | Día 12 | Anexo preguntas entrevista Android | Completado | Banco narrativo de preparación técnica con foco en razonamiento y decisión | D12-21 |
+| D12-23 | Día 12 | Documento de cierre final de curso | Completado | Cierre global en `00-informe/CIERRE-FINAL-CURSO.md` con criterio de entrega | D12-22 |
+| D13-01 | Día 13 | Auditoría de equivalencia iOS ↔ Android | Completado | Diagnóstico crítico y criterio objetivo en `00-informe/AUDITORIA-EQUIVALENCIA-IOS-ANDROID.md` | D12-23 |
+| D13-02 | Día 13 | Proyecto final integrador RuralGO FieldOps | Completado | Brief transversal en `05-proyecto-final/00-brief-ruralgo-fieldops.md` | D13-01 |
+| D13-03 | Día 13 | Rúbrica unificada de empleabilidad | Completado | Sistema de evaluación final en `05-proyecto-final/01-rubrica-empleabilidad.md` | D13-02 |
+| D13-04 | Día 13 | Evidencias obligatorias de aprendizaje y calidad | Completado | Criterios verificables en `05-proyecto-final/02-evidencias-obligatorias.md` | D13-03 |
+| D13-05 | Día 13 | Plan de refuerzo priorizado del curso Android | Completado | Hoja de implementación en `00-informe/PLAN-REFUERZO-CURSO-ANDROID.md` | D13-04 |
+| D13-06 | Día 13 | Mapa de mejoras por módulo y continuidad | Completado | Guía de mejora en `00-informe/MEJORAS-POR-MODULO-Y-EVIDENCIAS.md` | D13-05 |
+| D13-07 | Día 13 | Integración del bloque proyecto final en índice principal | Completado | Actualización de `README.md` con sección `05-proyecto-final` y enlaces de refuerzo | D13-06 |
