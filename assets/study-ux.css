@@ -14,10 +14,10 @@ body.with-global-topbar {
   padding: 10px 12px;
   background: var(--bg-elevated, #0f172a);
   border-bottom: 1px solid var(--border, #334155);
-  box-shadow: var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.18));
+  box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.18));
 }
 
-.global-topbar > * {
+.global-topbar>* {
   position: static !important;
 }
 
@@ -44,6 +44,18 @@ body.with-global-topbar {
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
+}
+
+#study-font-down,
+#study-font-up {
+  flex: 0 0 42px;
+  width: 42px;
+  min-width: 42px;
+  max-width: 42px;
+  padding: 8px 0;
+  font-size: 12px;
+  line-height: 1;
+  text-align: center;
 }
 
 #study-ux-controls button:hover,
@@ -144,7 +156,7 @@ a.doc-nav-link.study-nav-active {
 
 hr.lesson-separator,
 .lesson hr,
-section.lesson > hr,
+section.lesson>hr,
 #content hr,
 main hr {
   display: none !important;
@@ -201,6 +213,16 @@ main hr {
   .study-ux-index-actions button {
     font-size: 0.72rem;
     padding: 6px 8px;
+  }
+
+  #study-font-down,
+  #study-font-up {
+    flex-basis: 42px;
+    width: 42px;
+    min-width: 42px;
+    max-width: 42px;
+    padding: 6px 0;
+    font-size: 12px;
   }
 
   .study-progress {
