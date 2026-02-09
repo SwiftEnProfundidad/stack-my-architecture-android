@@ -40,6 +40,19 @@ Si quieres abrirlo con un solo gesto, usa [`open-course.command`](../stack-my-ar
 
 También puedes lanzarlo por terminal con [`scripts/open-course.command`](../stack-my-architecture-android/scripts/open-course.command). El generador que transforma Markdown en HTML está en [`scripts/build-html.py`](../stack-my-architecture-android/scripts/build-html.py) y deja el resultado en `dist/curso-stack-my-architecture-android.html`.
 
+## HTML Hub
+
+Puedes abrir iOS + Android desde un único portal HTML en `../stack-my-architecture-hub/index.html`.
+
+1. Ejecuta `../stack-my-architecture-hub/scripts/build-hub.sh`
+2. Abre `../stack-my-architecture-hub/index.html`
+3. Cambia de curso con el menú burger **Course Switcher** dentro del HTML
+
+Study UX se mantiene por curso (aislado por `course-id`):
+
+- iOS: `stack-my-architecture-ios`
+- Android: `stack-my-architecture-android`
+
 ## Requisitos técnicos
 
 - Android Studio estable
