@@ -2,7 +2,7 @@
 
 Llegamos a un punto importante del curso. En nivel Junior aprendiste a construir features con estado, persistencia local y pruebas. Eso te da una app funcional. Ahora, en Midlevel, el problema cambia. Ya no basta con “llamar una API y mostrar datos”. Necesitas una capa de red que sea estable cuando la red falla, mantenible cuando el producto crece y coherente con la arquitectura que venimos construyendo.
 
-En esta lección no vamos a introducir conceptos “porque sí”. Vamos a conectar cada pieza con lo aprendido. En [`01-junior/02-feature-base-practica.md`](../stack-my-architecture-android/01-junior/02-feature-base-practica.md) ya separaste pantalla, ViewModel y repositorio. En [`01-junior/05-room-offline-first.md`](../stack-my-architecture-android/01-junior/05-room-offline-first.md) separaste modelo de dominio y modelo de persistencia local. Ahora añadimos la pieza remota con la misma lógica de separación: infraestructura de red aislada, dominio limpio, flujo de datos entendible.
+En esta lección no vamos a introducir conceptos “porque sí”. Vamos a conectar cada pieza con lo aprendido. En [`01-junior/02-feature-base-practica.md`](../01-junior/02-feature-base-practica.md) ya separaste pantalla, ViewModel y repositorio. En [`01-junior/05-room-offline-first.md`](../01-junior/05-room-offline-first.md) separaste modelo de dominio y modelo de persistencia local. Ahora añadimos la pieza remota con la misma lógica de separación: infraestructura de red aislada, dominio limpio, flujo de datos entendible.
 
 Antes de escribir una sola línea, definimos términos en el momento exacto en que los necesitas.
 
@@ -443,4 +443,3 @@ Luego mapea el DTO a modelo de dominio dentro del repositorio de la feature.
 Finalmente, escribe test unitario del repositorio para validar que un error HTTP 404 se traduce al contrato de error esperado por la capa superior.
 
 Si completas ese recorrido sin saltarte capas, ya tienes una base Midlevel real para evolucionar hacia estrategias offline-first más avanzadas en los siguientes módulos.
-

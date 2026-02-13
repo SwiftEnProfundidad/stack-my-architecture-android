@@ -2,7 +2,7 @@
 
 Este plan convierte la revisión crítica en ejecución concreta. El objetivo no es rehacer el curso desde cero, sino reforzarlo donde más impacta para cerrar la brecha de equivalencia con iOS y, sobre todo, para que el alumno salga con señales reales de empleabilidad técnica.
 
-La idea central es simple: todo el recorrido debe desembocar en un único producto vivo, y cada nivel debe aportar una versión verificable de ese producto. Ese producto es RuralGO FieldOps, definido en [`00-brief-ruralgo-fieldops.md`](../stack-my-architecture-android/05-proyecto-final/00-brief-ruralgo-fieldops.md), con rúbrica de cierre en [`01-rubrica-empleabilidad.md`](../stack-my-architecture-android/05-proyecto-final/01-rubrica-empleabilidad.md) y evidencias obligatorias en [`02-evidencias-obligatorias.md`](../stack-my-architecture-android/05-proyecto-final/02-evidencias-obligatorias.md).
+La idea central es simple: todo el recorrido debe desembocar en un único producto vivo, y cada nivel debe aportar una versión verificable de ese producto. Ese producto es RuralGO FieldOps, definido en [`00-brief-ruralgo-fieldops.md`](../05-proyecto-final/00-brief-ruralgo-fieldops.md), con rúbrica de cierre en [`01-rubrica-empleabilidad.md`](../05-proyecto-final/01-rubrica-empleabilidad.md) y evidencias obligatorias en [`02-evidencias-obligatorias.md`](../05-proyecto-final/02-evidencias-obligatorias.md).
 
 ## Qué se refuerza en cada nivel
 
@@ -77,4 +77,3 @@ class ReinforcementPlanner {
 ```
 
 Este código no es decorativo. Resume la lógica de implementación: primero crear columna vertebral, luego conectar niveles, luego cerrar con evidencia operativa.
-

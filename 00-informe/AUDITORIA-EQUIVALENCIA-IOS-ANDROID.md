@@ -8,7 +8,7 @@ La comparación se hace sobre artefactos concretos de ambos repositorios. Del la
 
 ## Estado comparativo actual
 
-Cuando se compara la propuesta de valor, Android ya tiene una promesa formativa potente: progresión clara, stack moderno y cobertura por niveles. Esa base está bien representada en [`README.md`](../stack-my-architecture-android/README.md) y en [`INFORME-CURSO.md`](../stack-my-architecture-android/00-informe/INFORME-CURSO.md). Sin embargo, la versión iOS sigue mostrando una columna vertebral más cerrada entre teoría, decisiones y ejecución verificable, visible en [`README.md`](README.md) y en su informe fundacional [`INFORME-CURSO.md`](00-informe/INFORME-CURSO.md).
+Cuando se compara la propuesta de valor, Android ya tiene una promesa formativa potente: progresión clara, stack moderno y cobertura por niveles. Esa base está bien representada en [`README.md`](../README.md) y en [`INFORME-CURSO.md`](INFORME-CURSO.md). Sin embargo, la versión iOS sigue mostrando una columna vertebral más cerrada entre teoría, decisiones y ejecución verificable, visible en [`README.md`](../../stack-my-architecture-ios/README.md) y en su informe fundacional [`INFORME-CURSO.md`](../../stack-my-architecture-ios/00-informe/INFORME-CURSO.md).
 
 En profundidad técnica, Android cubre casi todos los temas críticos del stack solicitado, pero todavía no obliga al alumno a demostrarlos de forma integrada sobre un único producto vivo con gates duros de calidad. En iOS esa exigencia aparece con más fuerza en la continuidad de sus etapas y artefactos.
 
@@ -39,4 +39,3 @@ Se considera equivalencia real con iOS solo si Android cumple simultáneamente e
 La auditoría concluye que el curso Android debe entrar en fase de refuerzo controlado. El objetivo no es reescribir todo ni romper continuidad. El objetivo es convertir lo ya construido en un sistema de formación verificable por evidencias, con un proyecto final central y una evaluación que realmente mida desempeño profesional.
 
 La implementación de esta decisión se desarrolla en el plan de refuerzo y en el nuevo bloque de proyecto final.
-

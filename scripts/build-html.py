@@ -1165,6 +1165,7 @@ blockquote p {{
         <a id="course-switcher-home" href="#">Cursos</a>
         <a id="course-switcher-ios" href="#">Curso iOS</a>
         <a id="course-switcher-android" href="#">Curso Android</a>
+        <a id="course-switcher-sdd" href="#">Curso IA + SDD</a>
     </div>
 </div>
 
@@ -1263,7 +1264,32 @@ function detectSnippetLang(codeEl) {{
     if (className.includes('language-json')) return 'JSON';
     if (className.includes('language-bash') || className.includes('language-shell')) return 'SH';
     if (className.includes('language-yaml') || className.includes('language-yml')) return 'YAML';
-    return 'KT';
+    if (className.includes('language-python') || className.includes('language-py')) return 'PY';
+    if (className.includes('language-mermaid')) return 'Mermaid';
+    if (className.includes('language-xml') || className.includes('language-html')) return 'XML';
+    if (className.includes('language-sql')) return 'SQL';
+    if (className.includes('language-markdown') || className.includes('language-md')) return 'MD';
+    if (className.includes('language-gherkin') || className.includes('language-feature')) return 'Gherkin';
+
+    const content = (codeEl.textContent || '').trim();
+    if (!content) return 'TXT';
+
+    if (
+        content.startsWith('flowchart') ||
+        content.startsWith('sequenceDiagram') ||
+        content.startsWith('classDiagram') ||
+        content.startsWith('stateDiagram') ||
+        content.startsWith('erDiagram')
+    ) return 'Mermaid';
+
+    if (/^(\\$\\s*)?(gradlew|adb|emulator|kotlin|ktlint|detekt|git|npm|node|python3|bash|sh)\\b/m.test(content)) return 'SH';
+    if (/^\\s*(package\\s+[a-zA-Z0-9_.]+|import\\s+[a-zA-Z0-9_.]+|data\\s+class\\s+\\w+|sealed\\s+(class|interface)\\s+\\w+|@Composable|class\\s+\\w+)/m.test(content)) return 'KT';
+    if (/^\\s*(\\{{|\\[\\s*\\{{|\"[^\"]+\"\\s*:)/m.test(content)) return 'JSON';
+    if (/^\\s*[a-zA-Z0-9_-]+\\s*:\\s*.+$/m.test(content) && !/;\\s*$/m.test(content)) return 'YAML';
+    if (/^\\s*SELECT\\b|^\\s*INSERT\\b|^\\s*UPDATE\\b|^\\s*DELETE\\b|^\\s*CREATE\\s+TABLE\\b/im.test(content)) return 'SQL';
+    if (/^\\s*<[^>]+>/m.test(content)) return 'XML';
+
+    return 'TXT';
 }}
 
 function copyCodeToClipboard(text) {{
@@ -1307,12 +1333,13 @@ function enhanceCodeBlocks() {{
         const copyBtn = document.createElement('button');
         copyBtn.type = 'button';
         copyBtn.className = 'sma-code-copy-btn';
-        copyBtn.textContent = 'Copy code';
+        copyBtn.textContent = 'Copiar';
+        copyBtn.setAttribute('aria-label', `Copiar snippet ${lang.textContent}`);
         copyBtn.addEventListener('click', () => {{
             const originalText = copyBtn.textContent;
             copyCodeToClipboard(code.textContent || '')
                 .then(() => {{
-                    copyBtn.textContent = 'Copied';
+                    copyBtn.textContent = 'Copiado';
                     setTimeout(() => {{ copyBtn.textContent = originalText; }}, 1200);
                 }})
                 .catch(() => {{
