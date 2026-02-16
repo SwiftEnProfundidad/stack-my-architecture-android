@@ -35,3 +35,71 @@ También quedó incorporado un criterio de revisión pedagógica continua. Eso p
 A partir de aquí, el curso queda en estado de referencia completa y utilizable. Puede recorrerse de forma lineal por nivel o consultarse por problemas concretos de diseño, integración, fiabilidad, release y crecimiento profesional.
 
 El cierre no marca un fin del aprendizaje. Marca el inicio de una práctica técnica más consciente, donde cada cambio en Android se decide con contexto, se valida con evidencia y se sostiene con responsabilidad de producto.
+
+---
+
+## Evidencia de ejecución (auditoría técnica)
+
+### Curso (repo root)
+
+| Comando | Exit code | Resultado |
+|---------|-----------|-----------|
+| `python3 scripts/build-html.py` | 0 | 80 archivos → 654 KB HTML |
+| `python3 scripts/validate-file-order.py` | 0 | 80 entradas, todas existen |
+| `python3 scripts/check-links.py` | 0 | 102 .md escaneados, 0 links rotos |
+| `python3 scripts/validate-course-structure.py` | 0 | 9 dirs + 9 archivos críticos OK |
+
+### Proyecto Android (`proyecto-android/`)
+
+| Comando | Exit code | Resultado |
+|---------|-----------|-----------|
+| `./gradlew :app:assembleDebug` | 0 | APK generado (219 tasks) |
+| `./gradlew testDebugUnitTest` | 0 | 9 tests passed, 0 failed |
+| `./gradlew lintDebug` | 0 | Sin errores de lint |
+| `./scripts/quality-gates.sh` | 0 | Gates 1-3 passed, Gate 4 skipped (sin emulador) |
+
+### Stack verificado
+
+- **Kotlin**: 2.3.10 (integrado en AGP 9.0)
+- **AGP**: 9.0.0
+- **Gradle**: 9.1.0 (wrapper)
+- **JDK**: 17.0.18 (OpenJDK Homebrew)
+- **compileSdk/targetSdk**: 36, **minSdk**: 26
+- **Compose BOM**: 2026.01.01
+- **Navigation Compose**: 2.9.6
+- **Hilt**: 2.59.1 (compatible AGP 9)
+- **KSP**: 2.3.5
+- **Room**: 2.7.1, **DataStore**: 1.2.0
+
+### Módulos del proyecto
+
+```
+proyecto-android/
+├── app/                    ← Entry point, Hilt, NavHost
+├── core/common/            ← Result sealed interface
+├── core/ui/                ← Theme, Compose compartido
+├── core/testing/           ← MainDispatcherRule, test deps
+├── core/network/           ← FakeNetworkDataSource
+├── core/database/          ← Room (TaskEntity, TaskDao, DB, DI)
+├── core/datastore/         ← DataStore preferences (UserPreferences interface)
+├── feature/onboarding/     ← OnboardingScreen
+├── feature/auth/           ← LoginViewModel + LoginScreen + AuthRepository
+├── feature/catalog/        ← Placeholder (v2.0)
+├── feature/tasks/          ← TaskList + TaskDetail + TaskRepository + tests
+├── benchmark/              ← Stub (Midlevel+)
+├── baselineprofile/        ← Stub (Midlevel+)
+└── scripts/quality-gates.sh
+```
+
+### P0 cerrados
+
+Todos los P0 identificados fueron resueltos:
+- `proyecto-android/` creado con Gradle multi-módulo real
+- Quality gates locales implementados y verificados
+- CI (GitHub Actions) configurado
+- Doc ↔ code alineados (sección FieldOps en cada nivel)
+- Scripts de validación creados y funcionando
+
+### P0 pendientes
+
+Ninguno.
