@@ -266,7 +266,7 @@ def render_table(rows):
 def inline_format(text):
     """Aplica formato inline: bold, italic, code, links."""
     # Inline code (before other formatting to avoid conflicts)
-    text = re.sub(r"`([^`]+)`", r"<code>\1</code>", text)
+    text = re.sub(r"`([^`]+)`", lambda m: "<code>" + m.group(1).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") + "</code>", text)
     # Bold + italic
     text = re.sub(r"\*\*\*(.+?)\*\*\*", r"<strong><em>\1</em></strong>", text)
     # Bold
@@ -489,6 +489,30 @@ def build_html():
 }}
 
 /* ============================================
+   STYLE: BOLD - Dark Mode overrides
+   Alto contraste, manteniendo la identidad naranja
+   ============================================ */
+[data-theme="dark"][data-style="bold"] {{
+    --bg: #0a0a0f;
+    --bg-elevated: #141419;
+    --bg-surface: #1e1e24;
+    
+    --text: #ffffff;
+    --text-secondary: #d0d0e0;
+    --text-muted: #a0a0b0;
+    
+    --accent: #ff6b35;
+    --accent-light: #ff8c5a;
+    --accent-dark: #e55a2b;
+    --accent-soft: rgba(255, 107, 53, 0.15);
+    
+    --sidebar-bg: #0f0f14;
+    --code-bg: #1a1a22;
+    --border: #3a3a45;
+    --border-light: #2a2a35;
+}}
+
+/* ============================================
    STYLE: PAPER
    Cálido, orgánico, académico
    ============================================ */
@@ -695,7 +719,7 @@ h1, h2, h3, h4 {{
 }}
 
 h1 {{
-    font-size: 2.5rem;
+    font-size: 2.5em;
     margin: 0 0 var(--space-lg);
     padding-bottom: var(--space-md);
     border-bottom: 3px solid var(--accent);
@@ -714,7 +738,7 @@ h1::after {{
 }}
 
 h2 {{
-    font-size: 1.75rem;
+    font-size: 1.75em;
     margin: var(--space-2xl) 0 var(--space-md);
     color: var(--text);
     display: flex;
@@ -731,14 +755,14 @@ h2::before {{
 }}
 
 h3 {{
-    font-size: 1.375rem;
+    font-size: 1.375em;
     margin: var(--space-xl) 0 var(--space-sm);
     color: var(--text);
     font-weight: 600;
 }}
 
 h4 {{
-    font-size: 1.125rem;
+    font-size: 1.125em;
     margin: var(--space-lg) 0 var(--space-sm);
     color: var(--text-secondary);
     font-weight: 600;
@@ -772,19 +796,29 @@ hr.lesson-separator {{
    BLOQUES DE CÓDIGO
    ============================================ */
 pre {{
-    background: var(--code-bg);
+    background: transparent;
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
-    padding: var(--space-lg);
+    padding: 0;
     overflow-x: auto;
     margin: var(--space-lg) 0;
-    font-size: 0.875rem;
+    font-size: 0.875em;
     line-height: 1.6;
     box-shadow: var(--shadow-sm);
 }}
 
+pre > code {{
+    display: block;
+    padding: var(--space-lg);
+    border-radius: var(--radius-md);
+    background: var(--code-bg);
+}}
+
 pre.sma-code-enhanced {{
     position: relative;
+}}
+
+pre.sma-code-enhanced > code {{
     padding-top: calc(var(--space-lg) + 1.2rem);
 }}
 
@@ -986,19 +1020,19 @@ blockquote p {{
         padding: 20px 16px;
         width: 100%;
     }}
-    h1 {{ font-size: 1.6rem; margin: 32px 0 12px; }}
-    h2 {{ font-size: 1.3rem; margin: 28px 0 10px; }}
-    h3 {{ font-size: 1.1rem; margin: 20px 0 8px; }}
-    h4 {{ font-size: 1rem; margin: 16px 0 6px; }}
-    pre {{ padding: 12px; font-size: 0.82rem; }}
+    h1 {{ font-size: 1.6em; margin: 32px 0 12px; }}
+    h2 {{ font-size: 1.3em; margin: 28px 0 10px; }}
+    h3 {{ font-size: 1.1em; margin: 20px 0 8px; }}
+    h4 {{ font-size: 1em; margin: 16px 0 6px; }}
+    pre {{ padding: 0; font-size: 0.82em; }}
     th, td {{ padding: 8px 10px; font-size: 0.85rem; }}
 }}
 
 @media (max-width: 480px) {{
     #content {{ padding: 16px 12px; }}
-    h1 {{ font-size: 1.4rem; }}
-    h2 {{ font-size: 1.2rem; }}
-    pre {{ padding: 10px; font-size: 0.78rem; overflow-x: scroll; }}
+    h1 {{ font-size: 1.4em; }}
+    h2 {{ font-size: 1.2em; }}
+    pre {{ padding: 0; font-size: 0.78em; overflow-x: scroll; }}
 }}
 
 /* Dark theme */
@@ -1161,6 +1195,7 @@ blockquote p {{
 </div>
 
 <div id="course-switcher" class="course-switcher" aria-label="Selector de cursos">
+    <button id="course-switcher-toggle" type="button">&#9776; Cursos</button>
     <div id="course-switcher-menu" class="course-switcher-menu">
         <a id="course-switcher-home" href="#">Cursos</a>
         <a id="course-switcher-ios" href="#">Curso iOS</a>
