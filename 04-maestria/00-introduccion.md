@@ -1,5 +1,18 @@
 # Nivel Maestría · 00 · Introducción: escalar sin perder claridad
 
+> **Estado actual de FieldOps:** v3.0 pendiente — Release buildType configurado con minify/signing. Pendiente: feature flags, observabilidad real, SLOs, runbooks operativos.
+>
+> **Objetivo de versión:** v4.0 (Maestría) — Gobernanza a escala, contratos evolutivos entre dominios, mantenibilidad a largo plazo, defensa técnica de decisiones.
+>
+> **Comandos de verificación:**
+> ```bash
+> cd proyecto-android
+> ./scripts/quality-gates.sh            # Gates completos
+> ./gradlew :benchmark:connectedCheck   # Performance
+> ```
+>
+> **Proyecto:** ver [Brief FieldOps](../05-proyecto-final/00-brief-ruralgo-fieldops.md) · [Rúbrica](../05-proyecto-final/01-rubrica-empleabilidad.md) · [Evidencias obligatorias](../05-proyecto-final/02-evidencias-obligatorias.md)
+
 Llegar a Maestría no significa que ahora todo se vuelve más difícil por obligación. Significa algo más interesante y más desafiante: empiezas a tomar decisiones cuyo impacto ya no se queda en una sola feature ni en un solo sprint. Lo que diseñes aquí afecta cómo colaboran equipos, cómo evolucionan contratos durante meses y cómo se sostiene el producto cuando cambia el negocio.
 
 Por eso, esta etapa no trata de “más patrones” por acumular. Trata de aprender a escalar complejidad sin perder legibilidad, velocidad ni fiabilidad.

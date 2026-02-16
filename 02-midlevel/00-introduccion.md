@@ -1,5 +1,21 @@
 # Nivel Midlevel · 00 · Qué cambia desde Junior y por qué
 
+> **Estado actual de FieldOps:** v1.0 completada con Retrofit/OkHttp integrado, SyncWorker con WorkManager, sealed routes, 9 unit tests + 3 integration tests (MockWebServer). Módulos benchmark y baselineprofile creados.
+>
+> **Objetivo de versión:** v2.0 (Midlevel) — Sincronización offline-first completa, resolución de conflictos, observabilidad, integration tests e2e, Macrobenchmark ejecutado y Baseline Profiles generados.
+>
+> **Comandos de verificación:**
+> ```bash
+> cd proyecto-android
+> ./gradlew :app:assembleDebug
+> ./gradlew testDebugUnitTest
+> ./gradlew lintDebug
+> ./gradlew connectedDebugAndroidTest   # requiere emulador
+> ./gradlew :benchmark:connectedCheck   # Macrobenchmark (desde este nivel)
+> ```
+>
+> **Proyecto:** ver [Brief FieldOps](../05-proyecto-final/00-brief-ruralgo-fieldops.md) · [Rúbrica](../05-proyecto-final/01-rubrica-empleabilidad.md) · [Evidencias obligatorias](../05-proyecto-final/02-evidencias-obligatorias.md)
+
 Has cerrado Junior con una base sólida. Ya sabes organizar features, manejar estado, navegar, inyectar dependencias, persistir en local y probar lo esencial. Ahora empieza Midlevel, y aquí cambia el tipo de problema.
 
 En Junior el foco principal era construir bien. En Midlevel el foco principal será construir bien bajo condiciones reales: red inestable, latencia, errores de servidor, conflictos de datos, sincronización y observabilidad mínima para entender qué pasa en producción.

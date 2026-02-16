@@ -286,11 +286,12 @@ def build_nav(files_content):
 
     sections = {
         "00-informe": "Informe fundacional",
-        "01-fundamentos": "Etapa 1: Junior",
-        "02-integracion": "Etapa 2: Mid",
-        "03-evolucion": "Etapa 3: Senior",
-        "04-arquitecto": "Etapa 4: Arquitecto",
-        "05-maestria": "Etapa 5: Maestria",
+        "00-nivel-cero": "Nivel Cero: Fundamentos",
+        "01-junior": "Nivel Junior",
+        "02-midlevel": "Nivel Midlevel",
+        "03-senior": "Nivel Senior",
+        "04-maestria": "Nivel Maestria",
+        "05-proyecto-final": "Proyecto Final",
         "anexos": "Anexos",
     }
 

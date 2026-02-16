@@ -1,5 +1,18 @@
 # Nivel Senior · 00 · Introducción: de construir features a operar producto real
 
+> **Estado actual de FieldOps:** v2.0 en progreso — Retrofit/OkHttp + SyncWorker integrados, release buildType con minify/signing placeholder, proguard-rules.pro, módulos benchmark/baselineprofile creados. Pendiente: offline-first completo, observabilidad, CI ejecutado.
+>
+> **Objetivo de versión:** v3.0 (Senior) — Release strategy, rollback seguro, feature flags, observabilidad con SLOs, gobierno de calidad, adaptador Firebase opcional.
+>
+> **Comandos de verificación:**
+> ```bash
+> cd proyecto-android
+> ./scripts/quality-gates.sh            # Gates completos (assemble + test + lint + instrumented)
+> ./gradlew :benchmark:connectedCheck   # Performance
+> ```
+>
+> **Proyecto:** ver [Brief FieldOps](../05-proyecto-final/00-brief-ruralgo-fieldops.md) · [Rúbrica](../05-proyecto-final/01-rubrica-empleabilidad.md) · [Evidencias obligatorias](../05-proyecto-final/02-evidencias-obligatorias.md)
+
 Hasta aquí ya recorriste un camino que no es menor. Aprendiste a construir con orden, a proteger calidad en CI, a medir rendimiento y a evolucionar arquitectura sin romper todo cada dos semanas. Ese trabajo te dio base técnica sólida. Ahora viene el cambio de mentalidad que separa a quien implementa bien de quien sostiene productos en el tiempo.
 
 En este nivel Senior el foco ya no es solo “que funcione”. El foco pasa a ser “que siga funcionando bajo presión”, con releases frecuentes, con incidentes reales, con deuda viva y con decisiones que impactan a más de un equipo.

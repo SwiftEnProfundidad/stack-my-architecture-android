@@ -182,13 +182,13 @@ La auditoría de brechas y la propuesta reforzada de implementación se document
 
 ## Progreso y evaluación
 
-| Nivel | Estado | Evidencia mínima |
-|---|---|---|
-| Nivel Cero | Completado | Mini app funcional + checklist completado |
-| Junior | Completado | Feature con ViewModel + pruebas básicas |
-| Midlevel | Completado | Integración red + Room + DataStore |
-| Senior | Completado | Gobernanza operativa, SLOs y respuesta a incidentes aplicados |
-| Maestría | Completado | Gobernanza de escala, defensa técnica, publicación y plan profesional post-curso |
+| Nivel | Doc | Código | Evidencia mínima |
+|---|---|---|---|
+| Nivel Cero | Completado | Pendiente | Lecciones completas; proyecto "Rutina Diaria" pendiente de implementar |
+| Junior | Completado | v1.0 parcial | Auth + Tasks + Room + DataStore + Hilt + 9 unit tests + WorkManager + Retrofit |
+| Midlevel | Completado | En progreso | Retrofit integrado; offline-first sync, integration tests y benchmark pendientes |
+| Senior | Completado | Pendiente | Documentación completa; artefactos operativos pendientes |
+| Maestría | Completado | Pendiente | Documentación completa; defensa técnica y publicación pendientes |
 
 ## Reglas del estudiante
 

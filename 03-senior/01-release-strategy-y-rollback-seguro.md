@@ -26,17 +26,17 @@ Un `build.gradle.kts` de módulo `app` con variantes claras suele verse así:
 
 ```kotlin
 android {
-    namespace = "com.stackmyarchitecture.android"
+    namespace = "com.stackmyarchitecture.fieldops"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.stackmyarchitecture.android"
+        applicationId = "com.stackmyarchitecture.fieldops"
         minSdk = 26
         targetSdk = 36
         versionCode = 10100
         versionName = "1.1.0"
 
-        testInstrumentationRunner = "com.stackmyarchitecture.android.HiltTestRunner"
+        testInstrumentationRunner = "com.stackmyarchitecture.fieldops.HiltTestRunner"
     }
 
     buildTypes {

@@ -1,5 +1,19 @@
 # Nivel Junior · 00 · De Nivel Cero a desarrollo Android real
 
+> **Estado actual de FieldOps:** v1.0 — Auth (mock), tasks (list + detail), navegación con sealed routes, Hilt DI, DataStore, Room, Retrofit/OkHttp (con fallback), WorkManager (SyncWorker), 9 unit tests + 3 integration tests.
+>
+> **Objetivo de versión:** v1.0 (Junior) — App funcional con arquitectura limpia inicial, UDF, persistencia local, capa de red y tests unitarios.
+>
+> **Comandos de verificación:**
+> ```bash
+> cd proyecto-android
+> ./gradlew :app:assembleDebug        # Compila la app
+> ./gradlew testDebugUnitTest          # Ejecuta tests unitarios
+> ./gradlew lintDebug                  # Análisis estático
+> ```
+>
+> **Proyecto:** ver [Brief FieldOps](../05-proyecto-final/00-brief-ruralgo-fieldops.md) · [Rúbrica](../05-proyecto-final/01-rubrica-empleabilidad.md) · [Evidencias obligatorias](../05-proyecto-final/02-evidencias-obligatorias.md)
+
 Si has completado Nivel Cero, ya tienes algo muy valioso: no le tienes miedo al código. Eso parece pequeño, pero en realidad es enorme. Muchas personas se quedan bloqueadas porque ven Android como algo misterioso. Tú ya no estás en ese punto. Tú ya sabes abrir Android Studio, escribir Kotlin básico, crear pantallas simples y moverte entre ellas. Ahora empieza una nueva etapa.
 
 En Junior vamos a pasar de ejercicios guiados a desarrollo con criterio profesional inicial. Eso significa que no solo vas a escribir código que “funciona”. Vas a aprender a escribir código que también sea claro, mantenible y preparado para crecer.
