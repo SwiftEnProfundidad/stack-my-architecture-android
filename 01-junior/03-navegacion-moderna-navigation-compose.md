@@ -17,7 +17,7 @@ Ahora te muestro un diagrama simple para visualizar todo esto antes del código.
 ```mermaid
 flowchart LR
     A[HomeScreen] -->|navigate tasks| B[TasksScreen]
-    B -->|navigate tasks/{taskId}| C[TaskDetailScreen]
+    B -->|navigate task detail| C[TaskDetailScreen]
     C -->|popBackStack| B
     B -->|popBackStack| A
 ```
@@ -328,4 +328,3 @@ Después añade un destino con parámetro `profile/{userId}` y navega con `creat
 Finalmente rompe voluntariamente una ruta para observar el error y vuelve a corregirla. Esta práctica te enseña más que copiar ejemplos perfectos.
 
 Cuando termines este reto, ya tendrás una base de navegación moderna que podrás usar en todo el curso sin deuda técnica innecesaria.
-
