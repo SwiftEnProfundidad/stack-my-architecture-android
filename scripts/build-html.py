@@ -9,6 +9,8 @@ import os
 import re
 import sys
 import shutil
+import html
+import time
 from pathlib import Path
 
 COURSE_ROOT = Path(__file__).parent.parent
@@ -17,6 +19,7 @@ OUTPUT_FILE = OUTPUT_DIR / "curso-stack-my-architecture-android.html"
 OUTPUT_INDEX_FILE = OUTPUT_DIR / "index.html"
 ASSETS_SRC_DIR = COURSE_ROOT / "assets"
 ASSETS_DIST_DIR = OUTPUT_DIR / "assets"
+VERCEL_CONFIG_SRC = COURSE_ROOT / "vercel.json"
 
 # Orden de los archivos (segun README)
 FILE_ORDER = [
@@ -103,7 +106,79 @@ FILE_ORDER = [
 ]
 
 
-def md_to_html(md_text, file_id):
+MERMAID_ARROW_LEGEND_KEYWORDS = (
+    "module",
+    "modulo",
+    "feature",
+    "context",
+    "bounded",
+    "boundary",
+    "dependency",
+    "dependenc",
+    "protocol",
+    "interface",
+    "inherit",
+    "extension",
+    "router",
+    "coordinator",
+    "viewmodel",
+    "repository",
+    "adapter",
+    "domain",
+    "application",
+    "infrastructure",
+    "wiring",
+    "usecase",
+    "actor",
+    "aggregate",
+    "service",
+)
+
+
+def mermaid_needs_arrow_legend(raw_code_content: str, file_path: str) -> bool:
+    source = f"{file_path}\n{raw_code_content}".lower()
+    relation_tokens = ("-->", "-.->", "<|--", "--|>", "..|>", "..>", "o--", "*--")
+    has_relations = any(token in raw_code_content for token in relation_tokens)
+    if not has_relations:
+        return False
+    return any(keyword in source for keyword in MERMAID_ARROW_LEGEND_KEYWORDS)
+
+
+def normalize_mermaid_source(raw_code_content: str) -> str:
+    normalized = raw_code_content
+    lines = [line.strip() for line in raw_code_content.splitlines() if line.strip()]
+    if not lines:
+        return normalized
+    is_flowchart = lines[0].startswith("flowchart") or lines[0].startswith("graph")
+    is_state_diagram = lines[0].startswith("stateDiagram")
+    if is_flowchart:
+        normalized = re.sub(r"\.\.\>\|", "-.->|", normalized)
+        normalized = re.sub(r"\.\.\>", "-.->", normalized)
+    if is_state_diagram:
+        normalized = re.sub(r"-\.\->", "-->", normalized)
+    return normalized
+
+
+def render_mermaid_block(raw_code_content: str, file_path: str) -> str:
+    normalized_code_content = normalize_mermaid_source(raw_code_content)
+    escaped_mermaid_code = html.escape(normalized_code_content)
+    legend_html = ""
+    if mermaid_needs_arrow_legend(normalized_code_content, file_path):
+        legend_html = (
+            '<div class="sma-mermaid-legend" role="note" aria-label="Leyenda de flechas para diagramas de arquitectura">'
+            '<p class="sma-mermaid-legend-title">Leyenda de flechas</p>'
+            '<div class="sma-mermaid-legend-grid">'
+            '<span class="sma-mermaid-legend-item"><i class="sma-arrow direct-closed"></i>Dependencia directa (runtime)</span>'
+            '<span class="sma-mermaid-legend-item"><i class="sma-arrow dashed-closed"></i>Wiring / configuracion</span>'
+            '<span class="sma-mermaid-legend-item"><i class="sma-arrow dashed-open"></i>Contrato / abstraccion</span>'
+            '<span class="sma-mermaid-legend-item"><i class="sma-arrow solid-open"></i>Salida / propagacion</span>'
+            "</div>"
+            "</div>\n"
+        )
+    return f'<div class="sma-mermaid-block">\n{legend_html}<pre class="mermaid">{escaped_mermaid_code}</pre>\n</div>\n'
+
+
+def md_to_html(md_text, file_id, file_path):
     """Convierte markdown a HTML basico con soporte para Mermaid."""
     html = ""
     lines = md_text.split("\n")
@@ -132,9 +207,7 @@ def md_to_html(md_text, file_id):
         if line.strip().startswith("```") and in_code:
             raw_code_content = "\n".join(code_buffer)
             if code_lang.lower() == "mermaid":
-                # Mermaid must be kept raw, otherwise entities like --> and <br/>
-                # are escaped and diagrams fail to parse/render.
-                html += f'<pre class="mermaid">{raw_code_content}</pre>\n'
+                html += render_mermaid_block(raw_code_content, file_path)
             else:
                 code_content = (
                     raw_code_content.replace("&", "&amp;")
@@ -331,12 +404,29 @@ def build_html():
 
     nav = build_nav(files_content)
 
+    version_sources = [
+        "study-ux.js",
+        "study-ux.css",
+        "course-switcher.js",
+        "course-switcher.css",
+        "theme-controls.js",
+        "assistant-panel.js",
+        "assistant-panel.css",
+        "assistant-bridge.js",
+    ]
+    version_marks = [
+        int((ASSETS_SRC_DIR / name).stat().st_mtime)
+        for name in version_sources
+        if (ASSETS_SRC_DIR / name).exists()
+    ]
+    asset_version = str(max(version_marks + [int(time.time())]))
+
     body_html = ""
     for filepath, content in files_content:
         file_id = filepath.replace("/", "-").replace(".md", "")
         body_html += f'<section id="{file_id}" class="lesson" data-topic-id="{file_id}" data-lesson-path="{filepath}">\n'
         body_html += f'<div class="lesson-path">{filepath}</div>\n'
-        body_html += md_to_html(content, file_id)
+        body_html += md_to_html(content, file_id, filepath)
         body_html += "</section>\n"
 
     html_template = """<!DOCTYPE html>
@@ -344,16 +434,17 @@ def build_html():
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="darkreader-lock">
 <meta name="course-id" content="stack-my-architecture-android">
 <title>Stack: My Architecture Android</title>
-<link rel="stylesheet" href="assets/study-ux.css">
-<link rel="stylesheet" href="assets/course-switcher.css">
-<link rel="stylesheet" href="assets/assistant-panel.css">
-<script defer src="assets/study-ux.js"></script>
-<script defer src="assets/course-switcher.js"></script>
-<script defer src="assets/theme-controls.js"></script>
-<script defer src="assets/assistant-panel.js"></script>
-<script defer src="assets/assistant-bridge.js"></script>
+<link rel="stylesheet" href="assets/study-ux.css?v=__ASSET_VERSION__">
+<link rel="stylesheet" href="assets/course-switcher.css?v=__ASSET_VERSION__">
+<link rel="stylesheet" href="assets/assistant-panel.css?v=__ASSET_VERSION__">
+<script defer src="assets/study-ux.js?v=__ASSET_VERSION__"></script>
+<script defer src="assets/course-switcher.js?v=__ASSET_VERSION__"></script>
+<script defer src="assets/theme-controls.js?v=__ASSET_VERSION__"></script>
+<script defer src="assets/assistant-panel.js?v=__ASSET_VERSION__"></script>
+<script defer src="assets/assistant-bridge.js?v=__ASSET_VERSION__"></script>
 
 <!-- Google Fonts - Inter -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -877,13 +968,164 @@ p code, li code, td code {{
 }}
 
 /* Mermaid diagrams */
+:root {{
+    --mermaid-bg: #ffffff;
+    --mermaid-text: #0f172a;
+    --mermaid-node-bg: #f8fafc;
+    --mermaid-node-border: #1d4ed8;
+    --mermaid-line: #1e40af;
+    --mermaid-label-bg: #eef2ff;
+    --mermaid-legend-direct: #d946ef;
+    --mermaid-legend-dashed-closed: #64748b;
+    --mermaid-legend-dashed-open: #2563eb;
+    --mermaid-legend-solid-open: #059669;
+}}
+
+.sma-mermaid-block {{
+    margin: var(--space-lg) 0;
+}}
+
+.sma-mermaid-legend {{
+    border: 1px solid var(--border);
+    background: var(--bg-surface);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    margin: 0 0 var(--space-sm);
+}}
+
+.sma-mermaid-legend-title {{
+    margin: 0 0 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}}
+
+.sma-mermaid-legend-grid {{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 6px 12px;
+}}
+
+.sma-mermaid-legend-item {{
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+    color: var(--text);
+}}
+
+.sma-arrow {{
+    position: relative;
+    width: 34px;
+    height: 0;
+    border-top: 2px solid currentColor;
+    flex: 0 0 34px;
+}}
+
+.sma-arrow::after {{
+    content: '';
+    position: absolute;
+    right: -1px;
+    top: -5px;
+    border-left: 8px solid currentColor;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+}}
+
+.sma-arrow.direct-closed {{ color: var(--mermaid-legend-direct); }}
+
+.sma-arrow.dashed-closed {{
+    color: var(--mermaid-legend-dashed-closed);
+    border-top-style: dashed;
+}}
+
+.sma-arrow.dashed-open {{
+    color: var(--mermaid-legend-dashed-open);
+    border-top-style: dashed;
+}}
+
+.sma-arrow.dashed-open::after,
+.sma-arrow.solid-open::after {{
+    border-left-color: transparent;
+    border: 2px solid currentColor;
+    width: 8px;
+    height: 8px;
+    border-left: 0;
+    border-bottom: 0;
+    transform: rotate(45deg);
+    right: -2px;
+    top: -4px;
+    background: transparent;
+}}
+
+.sma-arrow.solid-open {{ color: var(--mermaid-legend-solid-open); }}
+
 pre.mermaid {{
-    background: white;
+    background: var(--mermaid-bg);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     text-align: center;
     padding: var(--space-xl);
     box-shadow: var(--shadow);
+    overflow-x: auto;
+    overflow-y: hidden;
+}}
+
+pre.mermaid svg {{
+    max-width: 100%;
+    height: auto;
+}}
+
+html[data-theme][data-style] pre.mermaid .label,
+html[data-theme][data-style] pre.mermaid .nodeLabel,
+html[data-theme][data-style] pre.mermaid .edgeLabel,
+html[data-theme][data-style] pre.mermaid .cluster-label,
+html[data-theme][data-style] pre.mermaid text,
+html[data-theme][data-style] pre.mermaid tspan {{
+    fill: var(--mermaid-text) !important;
+    color: var(--mermaid-text) !important;
+}}
+
+html[data-theme][data-style] pre.mermaid .node rect,
+html[data-theme][data-style] pre.mermaid .node polygon,
+html[data-theme][data-style] pre.mermaid .node circle,
+html[data-theme][data-style] pre.mermaid .node ellipse,
+html[data-theme][data-style] pre.mermaid .cluster rect,
+html[data-theme][data-style] pre.mermaid .actor,
+html[data-theme][data-style] pre.mermaid .labelBox {{
+    fill: var(--mermaid-node-bg) !important;
+    stroke: var(--mermaid-node-border) !important;
+}}
+
+html[data-theme][data-style] pre.mermaid .edgePath .path,
+html[data-theme][data-style] pre.mermaid path.relation,
+html[data-theme][data-style] pre.mermaid line {{
+    stroke: var(--mermaid-line) !important;
+}}
+
+html[data-theme][data-style] pre.mermaid .messageLine0,
+html[data-theme][data-style] pre.mermaid .messageLine1,
+html[data-theme][data-style] pre.mermaid .messageLine2 {{
+    stroke: var(--mermaid-line) !important;
+    stroke-width: 2px !important;
+    opacity: 1 !important;
+}}
+
+html[data-theme][data-style] pre.mermaid .arrowheadPath,
+html[data-theme][data-style] pre.mermaid marker path,
+html[data-theme][data-style] pre.mermaid marker polygon,
+html[data-theme][data-style] pre.mermaid marker polyline {{
+    fill: var(--mermaid-line) !important;
+    stroke: var(--mermaid-line) !important;
+    opacity: 1 !important;
+}}
+
+html[data-theme][data-style] pre.mermaid .edgeLabel rect,
+html[data-theme][data-style] pre.mermaid .labelBkg {{
+    fill: var(--mermaid-label-bg) !important;
+    opacity: 1 !important;
 }}
 
 /* ============================================
@@ -1055,7 +1297,6 @@ blockquote p {{
 [data-theme="dark"] #sidebar a {{ color: #8b949e; }}
 [data-theme="dark"] #sidebar a:hover {{ background: #21262d; color: var(--accent); }}
 [data-theme="dark"] #sidebar li.nav-section > strong {{ color: #f0f6fc; }}
-[data-theme="dark"] pre.mermaid {{ background: #161b22; }}
 [data-theme="dark"] .lesson-path {{ color: #8b949e; }}
 
 /* Back to top */
@@ -1430,14 +1671,21 @@ function renderMermaid() {{
         return;
     }}
 
+    document.querySelectorAll('pre.mermaid').forEach(function(el) {{
+        if (!el.dataset.originalMermaid) {{
+            el.dataset.originalMermaid = (el.textContent || '').trimEnd();
+        }}
+        if (el.dataset.originalMermaid) {{
+            el.innerHTML = '';
+            el.textContent = el.dataset.originalMermaid;
+        }}
+        el.removeAttribute('data-processed');
+    }});
+
     mermaid.initialize({{
         startOnLoad: false,
         theme: currentMermaidTheme(),
         securityLevel: 'loose'
-    }});
-
-    document.querySelectorAll('pre.mermaid').forEach(el => {{
-        el.removeAttribute('data-processed');
     }});
 
     mermaid.run({{ querySelector: 'pre.mermaid' }});
@@ -1498,6 +1746,7 @@ document.querySelectorAll('#sidebar a').forEach(link => {{
     # plain string, unescape doubled braces from previous formatting, then inject
     # dynamic sections explicitly.
     html = html_template.replace("{{", "{").replace("}}", "}")
+    html = html.replace("__ASSET_VERSION__", asset_version)
     html = html.replace("{nav}", nav).replace("{body_html}", body_html)
 
     OUTPUT_DIR.mkdir(exist_ok=True)
@@ -1518,6 +1767,9 @@ document.querySelectorAll('#sidebar a').forEach(link => {{
         src = ASSETS_SRC_DIR / asset_name
         if src.exists():
             shutil.copy2(src, ASSETS_DIST_DIR / asset_name)
+
+    if VERCEL_CONFIG_SRC.exists():
+        shutil.copy2(VERCEL_CONFIG_SRC, OUTPUT_DIR / "vercel.json")
 
     print(f"  HTML generado: {OUTPUT_FILE}")
     print(f"  HTML index generado: {OUTPUT_INDEX_FILE}")
