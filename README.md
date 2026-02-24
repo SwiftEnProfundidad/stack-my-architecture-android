@@ -36,9 +36,9 @@ Que puedas construir apps Android reales con buenas prácticas profesionales, au
 
 El curso Android ya incluye generación HTML y arranque local con doble clic, igual que el flujo de iOS.
 
-Si quieres abrirlo con un solo gesto, usa [`open-course.command`](../stack-my-architecture-android/open-course.command). Ese comando genera el HTML completo y levanta localhost automáticamente en tu navegador.
+Si quieres abrirlo con un solo gesto, usa [`open-course.command`](open-course.command). Ese comando genera el HTML completo y levanta localhost automáticamente en tu navegador.
 
-También puedes lanzarlo por terminal con [`scripts/open-course.command`](../stack-my-architecture-android/scripts/open-course.command). El generador que transforma Markdown en HTML está en [`scripts/build-html.py`](../stack-my-architecture-android/scripts/build-html.py) y deja el resultado en `dist/curso-stack-my-architecture-android.html`.
+También puedes lanzarlo por terminal con [`scripts/open-course.command`](scripts/open-course.command). El generador que transforma Markdown en HTML está en [`scripts/build-html.py`](scripts/build-html.py) y deja el resultado en `dist/curso-stack-my-architecture-android.html`.
 
 ## HTML Hub
 
@@ -74,7 +74,7 @@ Study UX se mantiene por curso (aislado por `course-id`):
 - `05-proyecto-final`
 - `anexos`
 - `proyecto-android`
-- `plans`
+- `docs/management`
 
 ## Avance real por nivel (módulos publicados)
 
