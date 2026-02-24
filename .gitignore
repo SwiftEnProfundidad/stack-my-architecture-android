@@ -3,3 +3,6 @@
 .vscode/
 dist/
 .vercel
+output/
+heygen-*.png
+notebooklm-*.png
