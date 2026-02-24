@@ -42,6 +42,5 @@
 - Elección: Sprint estructurado por días y semanas.
 - Impacto: Mejor trazabilidad, control de calidad y menor ambigüedad.
 - Acciones derivadas:
-  - Mantener `plans/sprint-plan-implementacion.md` como fuente operativa.
+  - Mantener `docs/management/sprint-plan-implementacion.md` como fuente operativa.
   - Validar cada día contra checklist de definición de terminado.
-
