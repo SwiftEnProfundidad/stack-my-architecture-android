@@ -355,3 +355,40 @@ Después cambia fake a `shouldFail = false`, dispara `OnRetryClicked`, llama `ad
 Si ese test queda sólido, dominas el ciclo completo: error, reintento y recuperación.
 
 Con eso, cierras Junior con una base profesional real: no solo implementas features, también demuestras con pruebas que se comportan como se espera.
+
+<!-- semantica-flechas:auto -->
+## Semantica de flechas aplicada a esta arquitectura
+
+```mermaid
+flowchart LR
+    subgraph APP["App module"]
+        APPROOT["AppRoot + Hilt"]
+        DI["Dependency graph"]
+    end
+
+    subgraph FEATURE["Feature module"]
+        UI["FeatureScreen"]
+        VM["FeatureViewModel"]
+        PORT["FeaturePort (interface)"]
+    end
+
+    subgraph DATA["Data/Infra module"]
+        IMPL["FeatureAdapterImpl"]
+        LOCAL["LocalDataSource"]
+    end
+
+    APPROOT -.-> DI
+    DI -.-> IMPL
+    UI --> VM
+    VM -.o PORT
+    IMPL --o PORT
+    IMPL --> LOCAL
+```text
+
+Lectura semantica minima de este diagrama:
+
+1. `-->` dependencia directa en runtime.
+2. `-.->` wiring y configuracion de ensamblado.
+3. `-.o` dependencia contra contrato/abstraccion.
+4. `--o` salida/propagacion desde implementacion concreta.
+
