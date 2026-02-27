@@ -44,6 +44,60 @@ flowchart LR
 
 Lectura del diagrama: la UI nunca habla directo con red. La UI observa datos locales. El repositorio coordina. El orquestador se encarga de sincronizar con remoto y reintentos.
 
+## Semántica de flechas aplicada al diseño offline-first de la app ejemplo
+
+En esta arquitectura no basta con “poner cajas y líneas”; cada flecha comunica un tipo de acoplamiento:
+
+```mermaid
+flowchart LR
+    subgraph APP["App / DI module"]
+        ROOT["AppRoot + Hilt modules"]
+    end
+
+    subgraph FEATURE["Tasks feature module"]
+        UI["TasksScreen"]
+        VM["TasksViewModel"]
+        REPO["TasksRepository"]
+        STORE_PORT["LocalTasksStore\n(port)"]
+        SYNC_PORT["TasksSyncPort\n(port)"]
+    end
+
+    subgraph DATA["Data + Infra modules"]
+        ROOM["RoomTasksStore\n(adapter)"]
+        ORCH["TasksSyncOrchestrator\n(adapter)"]
+        API["TasksApi"]
+        WM["WorkManager"]
+    end
+
+    ROOT -.-> REPO
+    ROOT -.-> ORCH
+
+    UI --> VM
+    VM --> REPO
+    REPO -.o STORE_PORT
+    REPO -.o SYNC_PORT
+
+    ROOM --o STORE_PORT
+    ORCH --o SYNC_PORT
+    ORCH --> API
+    ORCH --> WM
+```text
+
+Cómo leerlo correctamente:
+
+1. `-->` dependencia directa en runtime:
+   `TasksViewModel --> TasksRepository`, `TasksSyncOrchestrator --> TasksApi`, `TasksSyncOrchestrator --> WorkManager`.
+2. `-.->` wiring/configuración:
+   `AppRoot + Hilt` ensamblan dependencias (`TasksRepository`, `TasksSyncOrchestrator`) sin ejecutar reglas de negocio.
+3. `-.o` contrato/abstracción:
+   el repositorio habla con puertos (`LocalTasksStore`, `TasksSyncPort`) y no con implementaciones concretas.
+4. `--o` salida/propagación:
+   `RoomTasksStore` y `TasksSyncOrchestrator` cumplen esos puertos y conectan el core con infra real.
+
+Regla de revisión rápida:
+
+- si ves `TasksViewModel --> RoomTasksStore`, hay acoplamiento indebido de UI a infraestructura.
+
 ---
 
 ## 4) Modelo de sincronización en la entidad local
@@ -375,4 +429,3 @@ Después simula recuperación de red y ejecuta sincronización.
 Finalmente verifica que la tarea queda en `SYNCED` y que la UI muestra estado actualizado sin necesidad de recargar manualmente.
 
 Si puedes explicar ese flujo de extremo a extremo, ya dominaste la base offline-first de nivel Midlevel.
-
