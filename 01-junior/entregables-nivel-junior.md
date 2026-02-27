@@ -25,3 +25,71 @@ Desde el refuerzo del curso, este cierre también debe dejar explícitamente la 
 Para considerar v1.0 aceptada en Junior, además de los entregables anteriores, debes demostrar autenticación funcional de entrada, navegación entre lista y detalle de tareas, persistencia local mínima para continuidad de uso y una base de pruebas que cubra al menos los flujos críticos de UI y ViewModel.
 
 La evidencia mínima de v1.0 debe incluir un repositorio ejecutable, captura de ejecución navegando el flujo principal, reporte de pruebas pasando y una explicación breve de dos decisiones técnicas que tomaste para mantener el código evolutivo.
+
+<!-- auto-gapfix:layered-mermaid -->
+## Diagrama de arquitectura por capas
+
+```mermaid
+flowchart LR
+  subgraph CORE[Core / Domain]
+    C1[Entity]
+    C2[Rule]
+  end
+
+  subgraph APP[Application]
+    A1[UseCase]
+    A2[Port]
+  end
+
+  subgraph UI[Interface]
+    U1[ViewModel]
+    U2[Screen]
+  end
+
+  subgraph INFRA[Infrastructure]
+    I1[RemoteDataSource]
+    I2[LocalDataSource]
+  end
+
+  A1 --> C1
+  A1 -.-> A2
+  U1 -.o A1
+  A1 --o U1
+  A2 -.-> I1
+  A2 -.-> I2
+```
+
+La lectura del diagrama sigue esta semantica:
+1. `-->` dependencia directa en runtime.
+2. `-.->` contrato o abstraccion.
+3. `-.o` wiring o composicion.
+4. `--o` salida o propagacion de resultado.
+
+<!-- auto-gapfix:layered-snippet -->
+## Snippet de referencia por capas
+
+```kotlin
+interface FeaturePort {
+    suspend fun fetch(): List<String>
+}
+
+class FeatureUseCase(
+    private val port: FeaturePort
+) {
+    suspend operator fun invoke(): List<String> = port.fetch()
+}
+
+class FeatureViewModel(
+    private val useCase: FeatureUseCase
+) : ViewModel() {
+
+    private val _items = MutableStateFlow<List<String>>(emptyList())
+    val items: StateFlow<List<String>> = _items
+
+    fun load() {
+        viewModelScope.launch {
+            _items.value = runCatching { useCase() }.getOrDefault(emptyList())
+        }
+    }
+}
+```

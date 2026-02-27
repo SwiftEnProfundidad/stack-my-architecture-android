@@ -51,3 +51,42 @@ FIN
 En esta solución, la condición de la hora ajusta el ritmo de la mañana. Esa adaptación es exactamente lo que hará una app cuando reacciona a estados distintos.
 
 Como evidencia de progreso de esta lección, guarda tres cosas. Guarda tu algoritmo del desayuno, guarda tu algoritmo de puntualidad y escribe una explicación corta con tus palabras sobre por qué el orden importa en programación. Si puedes hacer estas tres cosas con claridad, has comenzado muy bien el curso.
+
+<!-- auto-gapfix:layered-mermaid -->
+## Diagrama de arquitectura por capas
+
+```mermaid
+flowchart LR
+  subgraph CORE[Core / Domain]
+    C1[Entity]
+    C2[Rule]
+  end
+
+  subgraph APP[Application]
+    A1[UseCase]
+    A2[Port]
+  end
+
+  subgraph UI[Interface]
+    U1[ViewModel]
+    U2[Screen]
+  end
+
+  subgraph INFRA[Infrastructure]
+    I1[RemoteDataSource]
+    I2[LocalDataSource]
+  end
+
+  A1 --> C1
+  A1 -.-> A2
+  U1 -.o A1
+  A1 --o U1
+  A2 -.-> I1
+  A2 -.-> I2
+```
+
+La lectura del diagrama sigue esta semantica:
+1. `-->` dependencia directa en runtime.
+2. `-.->` contrato o abstraccion.
+3. `-.o` wiring o composicion.
+4. `--o` salida o propagacion de resultado.

@@ -103,3 +103,41 @@ Si tras dos o tres iteraciones no ves mejoras en las métricas que motivaron las
 Este módulo marca un cambio importante en la manera de trabajar. Ya no solo sabes construir y proteger calidad. Ahora también sabes elegir con criterio qué mejora técnica debe ir primero para mover realmente la aguja del producto.
 
 En el siguiente tramo vamos a llevar esta misma lógica a arquitectura entre features, para que las decisiones de dependencia y límites de módulo también se tomen con evidencia y no con intuición.
+<!-- auto-gapfix:layered-mermaid -->
+## Diagrama de arquitectura por capas
+
+```mermaid
+flowchart LR
+  subgraph CORE[Core / Domain]
+    C1[Entity]
+    C2[Rule]
+  end
+
+  subgraph APP[Application]
+    A1[UseCase]
+    A2[Port]
+  end
+
+  subgraph UI[Interface]
+    U1[ViewModel]
+    U2[Screen]
+  end
+
+  subgraph INFRA[Infrastructure]
+    I1[RemoteDataSource]
+    I2[LocalDataSource]
+  end
+
+  A1 --> C1
+  A1 -.-> A2
+  U1 -.o A1
+  A1 --o U1
+  A2 -.-> I1
+  A2 -.-> I2
+```
+
+La lectura del diagrama sigue esta semantica:
+1. `-->` dependencia directa en runtime.
+2. `-.->` contrato o abstraccion.
+3. `-.o` wiring o composicion.
+4. `--o` salida o propagacion de resultado.
