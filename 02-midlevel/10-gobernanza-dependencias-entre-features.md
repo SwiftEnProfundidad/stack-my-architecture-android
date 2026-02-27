@@ -133,3 +133,41 @@ Eso significa que la arquitectura dejó de ser un dibujo y se volvió una práct
 Con este módulo acabas de blindar una de las fuentes más comunes de caos en proyectos Android que crecen rápido. Ahora no solo puedes construir bien, medir bien y priorizar bien. También puedes crecer sin perder estructura.
 
 En el siguiente tramo vamos a enlazar esta gobernanza con evolución de APIs internas y versionado de contratos para que las features puedan cambiar sin romper compatibilidad entre equipos.
+<!-- auto-gapfix:layered-mermaid -->
+## Diagrama de arquitectura por capas
+
+```mermaid
+flowchart LR
+  subgraph CORE[Core / Domain]
+    C1[Entity]
+    C2[Rule]
+  end
+
+  subgraph APP[Application]
+    A1[UseCase]
+    A2[Port]
+  end
+
+  subgraph UI[Interface]
+    U1[ViewModel]
+    U2[Screen]
+  end
+
+  subgraph INFRA[Infrastructure]
+    I1[RemoteDataSource]
+    I2[LocalDataSource]
+  end
+
+  A1 --> C1
+  A1 -.-> A2
+  U1 -.o A1
+  A1 --o U1
+  A2 -.-> I1
+  A2 -.-> I2
+```
+
+La lectura del diagrama sigue esta semantica:
+1. `-->` dependencia directa en runtime.
+2. `-.->` contrato o abstraccion.
+3. `-.o` wiring o composicion.
+4. `--o` salida o propagacion de resultado.

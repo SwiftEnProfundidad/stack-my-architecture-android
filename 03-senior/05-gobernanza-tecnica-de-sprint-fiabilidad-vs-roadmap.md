@@ -126,3 +126,42 @@ La clave está en tratar la policy como software vivo. Se itera, se corrige y se
 La gobernanza técnica de sprint no está para ganar discusiones internas. Está para que el equipo tome decisiones repetibles bajo presión, con equilibrio entre velocidad y estabilidad.
 
 Cuando esta capa se instala de verdad, el sprint deja de depender del estado de ánimo de la semana y empieza a apoyarse en un marco claro. Ese es el salto que prepara el terreno para la simulación del siguiente módulo, donde vas a aplicar este sistema completo en un escenario con tensión real.
+
+<!-- auto-gapfix:layered-mermaid -->
+## Diagrama de arquitectura por capas
+
+```mermaid
+flowchart LR
+  subgraph CORE[Core / Domain]
+    C1[Entity]
+    C2[Rule]
+  end
+
+  subgraph APP[Application]
+    A1[UseCase]
+    A2[Port]
+  end
+
+  subgraph UI[Interface]
+    U1[ViewModel]
+    U2[Screen]
+  end
+
+  subgraph INFRA[Infrastructure]
+    I1[RemoteDataSource]
+    I2[LocalDataSource]
+  end
+
+  A1 --> C1
+  A1 -.-> A2
+  U1 -.o A1
+  A1 --o U1
+  A2 -.-> I1
+  A2 -.-> I2
+```
+
+La lectura del diagrama sigue esta semantica:
+1. `-->` dependencia directa en runtime.
+2. `-.->` contrato o abstraccion.
+3. `-.o` wiring o composicion.
+4. `--o` salida o propagacion de resultado.

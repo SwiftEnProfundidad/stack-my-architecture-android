@@ -182,3 +182,42 @@ Si la detección no viene acompañada de plan de salida, el grafo mejora en teor
 Si quieres aplicar esta lección mañana en tu proyecto, toma una dependencia nueva propuesta en el sprint actual y sométela a este filtro simple: intención, frontera, alternativa por contrato y plan de retiro si requiere excepción temporal. Con ese ejercicio único ya empiezas a convertir arquitectura en sistema de decisión, no en decoración documental.
 
 Ese hábito es el que prepara el siguiente paso: coordinar migraciones transversales entre varios contextos sin perder control ni ritmo de entrega.
+
+<!-- auto-gapfix:layered-mermaid -->
+## Diagrama de arquitectura por capas
+
+```mermaid
+flowchart LR
+  subgraph CORE[Core / Domain]
+    C1[Entity]
+    C2[Rule]
+  end
+
+  subgraph APP[Application]
+    A1[UseCase]
+    A2[Port]
+  end
+
+  subgraph UI[Interface]
+    U1[ViewModel]
+    U2[Screen]
+  end
+
+  subgraph INFRA[Infrastructure]
+    I1[RemoteDataSource]
+    I2[LocalDataSource]
+  end
+
+  A1 --> C1
+  A1 -.-> A2
+  U1 -.o A1
+  A1 --o U1
+  A2 -.-> I1
+  A2 -.-> I2
+```
+
+La lectura del diagrama sigue esta semantica:
+1. `-->` dependencia directa en runtime.
+2. `-.->` contrato o abstraccion.
+3. `-.o` wiring o composicion.
+4. `--o` salida o propagacion de resultado.

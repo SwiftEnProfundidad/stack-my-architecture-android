@@ -63,3 +63,42 @@ Una conversación que aparece mucho en equipos Android es esta: “si paramos pa
 Cuando ese equilibrio está bien llevado, pasa algo interesante. El equipo no solo entrega más estable; también mejora su clima de trabajo. Menos incertidumbre, menos urgencias artificiales, menos retrabajo. Y eso, a largo plazo, tiene tanto impacto como cualquier optimización técnica.
 
 Con esta lección cerramos la parte de Maestría enfocada en sostenibilidad operacional. Si aplicas este enfoque, tu app no dependerá de momentos de brillantez puntual para mantenerse viva. Dependerá de un sistema de decisiones que funciona incluso cuando hay presión, cambios y crecimiento continuo.
+
+<!-- auto-gapfix:layered-mermaid -->
+## Diagrama de arquitectura por capas
+
+```mermaid
+flowchart LR
+  subgraph CORE[Core / Domain]
+    C1[Entity]
+    C2[Rule]
+  end
+
+  subgraph APP[Application]
+    A1[UseCase]
+    A2[Port]
+  end
+
+  subgraph UI[Interface]
+    U1[ViewModel]
+    U2[Screen]
+  end
+
+  subgraph INFRA[Infrastructure]
+    I1[RemoteDataSource]
+    I2[LocalDataSource]
+  end
+
+  A1 --> C1
+  A1 -.-> A2
+  U1 -.o A1
+  A1 --o U1
+  A2 -.-> I1
+  A2 -.-> I2
+```
+
+La lectura del diagrama sigue esta semantica:
+1. `-->` dependencia directa en runtime.
+2. `-.->` contrato o abstraccion.
+3. `-.o` wiring o composicion.
+4. `--o` salida o propagacion de resultado.

@@ -125,3 +125,41 @@ Ese cambio parece pequeño, pero en equipos reales marca diferencia entre escala
 Con este módulo ya puedes evolucionar contratos internos sin romper relaciones entre features. Acabas de añadir una capa de estabilidad que normalmente se echa de menos justo cuando el producto empieza a crecer de verdad.
 
 En el siguiente tramo vamos a aplicar esto al plano de navegación y deep links, para que la evolución de rutas también tenga compatibilidad y no se convierta en una fuente silenciosa de regresiones.
+<!-- auto-gapfix:layered-mermaid -->
+## Diagrama de arquitectura por capas
+
+```mermaid
+flowchart LR
+  subgraph CORE[Core / Domain]
+    C1[Entity]
+    C2[Rule]
+  end
+
+  subgraph APP[Application]
+    A1[UseCase]
+    A2[Port]
+  end
+
+  subgraph UI[Interface]
+    U1[ViewModel]
+    U2[Screen]
+  end
+
+  subgraph INFRA[Infrastructure]
+    I1[RemoteDataSource]
+    I2[LocalDataSource]
+  end
+
+  A1 --> C1
+  A1 -.-> A2
+  U1 -.o A1
+  A1 --o U1
+  A2 -.-> I1
+  A2 -.-> I2
+```
+
+La lectura del diagrama sigue esta semantica:
+1. `-->` dependencia directa en runtime.
+2. `-.->` contrato o abstraccion.
+3. `-.o` wiring o composicion.
+4. `--o` salida o propagacion de resultado.

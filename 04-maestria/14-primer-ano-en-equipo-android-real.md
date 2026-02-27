@@ -42,3 +42,42 @@ También te vas a encontrar con código legado que no diseñaste tú y que, a ve
 Si mantienes este enfoque durante tu primer año, vas a notar un cambio profundo. Dejarás de medir tu progreso por cuántas tecnologías conoces y empezarás a medirlo por cuánta confianza generas en el equipo cuando entregas. Esa confianza, en Android y en cualquier stack, es una moneda muy valiosa.
 
 Esta lección cierra la ruta extendida del curso con una idea simple: crecer como ingeniero no es correr más, es decidir mejor de forma sostenida.
+
+<!-- auto-gapfix:layered-mermaid -->
+## Diagrama de arquitectura por capas
+
+```mermaid
+flowchart LR
+  subgraph CORE[Core / Domain]
+    C1[Entity]
+    C2[Rule]
+  end
+
+  subgraph APP[Application]
+    A1[UseCase]
+    A2[Port]
+  end
+
+  subgraph UI[Interface]
+    U1[ViewModel]
+    U2[Screen]
+  end
+
+  subgraph INFRA[Infrastructure]
+    I1[RemoteDataSource]
+    I2[LocalDataSource]
+  end
+
+  A1 --> C1
+  A1 -.-> A2
+  U1 -.o A1
+  A1 --o U1
+  A2 -.-> I1
+  A2 -.-> I2
+```
+
+La lectura del diagrama sigue esta semantica:
+1. `-->` dependencia directa en runtime.
+2. `-.->` contrato o abstraccion.
+3. `-.o` wiring o composicion.
+4. `--o` salida o propagacion de resultado.

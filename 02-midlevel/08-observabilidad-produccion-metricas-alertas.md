@@ -216,3 +216,42 @@ En otras palabras, la observabilidad de producción cierra el ciclo completo de 
 Con este módulo ya no estás “esperando problemas”, estás diseñando cómo enterarte a tiempo y con contexto cuando aparezcan. Esa mentalidad es de equipo que opera producto real, no de equipo que solo entrega código.
 
 En el siguiente tramo del roadmap vamos a usar estas señales para guiar decisiones de arquitectura evolutiva y priorización técnica, conectando lo que medimos con cómo decidimos qué tocar primero en cada iteración.
+
+<!-- auto-gapfix:layered-mermaid -->
+## Diagrama de arquitectura por capas
+
+```mermaid
+flowchart LR
+  subgraph CORE[Core / Domain]
+    C1[Entity]
+    C2[Rule]
+  end
+
+  subgraph APP[Application]
+    A1[UseCase]
+    A2[Port]
+  end
+
+  subgraph UI[Interface]
+    U1[ViewModel]
+    U2[Screen]
+  end
+
+  subgraph INFRA[Infrastructure]
+    I1[RemoteDataSource]
+    I2[LocalDataSource]
+  end
+
+  A1 --> C1
+  A1 -.-> A2
+  U1 -.o A1
+  A1 --o U1
+  A2 -.-> I1
+  A2 -.-> I2
+```
+
+La lectura del diagrama sigue esta semantica:
+1. `-->` dependencia directa en runtime.
+2. `-.->` contrato o abstraccion.
+3. `-.o` wiring o composicion.
+4. `--o` salida o propagacion de resultado.

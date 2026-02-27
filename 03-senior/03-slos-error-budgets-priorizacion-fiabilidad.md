@@ -146,3 +146,41 @@ SLO y error budget no son un lujo de grandes empresas. Son una forma simple de p
 Cuando incorporas este marco en Android, el roadmap deja de ser una pelea de opiniones y se convierte en una secuencia de apuestas controladas por evidencia.
 
 En la siguiente lección vamos a aterrizar esa evidencia en un tablero operativo de fiabilidad con métricas mínimas, alertas accionables y rituales de revisión que sí se pueden sostener sprint tras sprint.
+<!-- auto-gapfix:layered-mermaid -->
+## Diagrama de arquitectura por capas
+
+```mermaid
+flowchart LR
+  subgraph CORE[Core / Domain]
+    C1[Entity]
+    C2[Rule]
+  end
+
+  subgraph APP[Application]
+    A1[UseCase]
+    A2[Port]
+  end
+
+  subgraph UI[Interface]
+    U1[ViewModel]
+    U2[Screen]
+  end
+
+  subgraph INFRA[Infrastructure]
+    I1[RemoteDataSource]
+    I2[LocalDataSource]
+  end
+
+  A1 --> C1
+  A1 -.-> A2
+  U1 -.o A1
+  A1 --o U1
+  A2 -.-> I1
+  A2 -.-> I2
+```
+
+La lectura del diagrama sigue esta semantica:
+1. `-->` dependencia directa en runtime.
+2. `-.->` contrato o abstraccion.
+3. `-.o` wiring o composicion.
+4. `--o` salida o propagacion de resultado.

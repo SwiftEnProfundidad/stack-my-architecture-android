@@ -68,3 +68,42 @@ Si quieres llevar esta defensa a nivel semisenior sólido, cuida especialmente e
 Cuando presentas así, el mensaje final queda claro: no construiste una demo, construiste un sistema que puede evolucionar.
 
 Con esta lección cerramos la secuencia principal de Maestría. Lo que sigue es aplicar este mismo criterio en tu proyecto final, defendiendo decisiones de manera honesta, técnica y conectada con el problema real de producto que quieres resolver.
+
+<!-- auto-gapfix:layered-mermaid -->
+## Diagrama de arquitectura por capas
+
+```mermaid
+flowchart LR
+  subgraph CORE[Core / Domain]
+    C1[Entity]
+    C2[Rule]
+  end
+
+  subgraph APP[Application]
+    A1[UseCase]
+    A2[Port]
+  end
+
+  subgraph UI[Interface]
+    U1[ViewModel]
+    U2[Screen]
+  end
+
+  subgraph INFRA[Infrastructure]
+    I1[RemoteDataSource]
+    I2[LocalDataSource]
+  end
+
+  A1 --> C1
+  A1 -.-> A2
+  U1 -.o A1
+  A1 --o U1
+  A2 -.-> I1
+  A2 -.-> I2
+```
+
+La lectura del diagrama sigue esta semantica:
+1. `-->` dependencia directa en runtime.
+2. `-.->` contrato o abstraccion.
+3. `-.o` wiring o composicion.
+4. `--o` salida o propagacion de resultado.

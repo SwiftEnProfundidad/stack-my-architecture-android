@@ -71,3 +71,42 @@ Para que esto no quede en documento, conviene conectar la gobernanza con los pip
 Cuando miras este enfoque en perspectiva, aparece una ventaja clara: el trimestre deja de ser una sucesión de incendios técnicos y se convierte en una secuencia de decisiones con criterio acumulativo. Cada equipo mantiene ritmo, pero el producto conserva coherencia.
 
 Con esta lección cerramos la parte de Maestría orientada a evolución organizativa. En la siguiente vamos a consolidar todo el recorrido del curso en una guía de operación final: cómo preparar una defensa técnica sólida del proyecto Android, conectando arquitectura, rendimiento, calidad y decisiones de negocio sin caer en discurso abstracto.
+
+<!-- auto-gapfix:layered-mermaid -->
+## Diagrama de arquitectura por capas
+
+```mermaid
+flowchart LR
+  subgraph CORE[Core / Domain]
+    C1[Entity]
+    C2[Rule]
+  end
+
+  subgraph APP[Application]
+    A1[UseCase]
+    A2[Port]
+  end
+
+  subgraph UI[Interface]
+    U1[ViewModel]
+    U2[Screen]
+  end
+
+  subgraph INFRA[Infrastructure]
+    I1[RemoteDataSource]
+    I2[LocalDataSource]
+  end
+
+  A1 --> C1
+  A1 -.-> A2
+  U1 -.o A1
+  A1 --o U1
+  A2 -.-> I1
+  A2 -.-> I2
+```
+
+La lectura del diagrama sigue esta semantica:
+1. `-->` dependencia directa en runtime.
+2. `-.->` contrato o abstraccion.
+3. `-.o` wiring o composicion.
+4. `--o` salida o propagacion de resultado.
