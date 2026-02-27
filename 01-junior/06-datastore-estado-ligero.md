@@ -373,3 +373,39 @@ Finalmente, explica en 6 líneas por qué esta solución usa DataStore y no Room
 
 Si puedes responder sin dudar, entendiste DataStore con criterio arquitectónico.
 
+<!-- semantica-flechas:auto -->
+## Semantica de flechas aplicada a esta arquitectura
+
+```mermaid
+flowchart LR
+    subgraph APP["App module"]
+        APPROOT["AppRoot + Hilt"]
+        DI["Dependency graph"]
+    end
+
+    subgraph FEATURE["Feature module"]
+        UI["FeatureScreen"]
+        VM["FeatureViewModel"]
+        PORT["FeaturePort (interface)"]
+    end
+
+    subgraph DATA["Data/Infra module"]
+        IMPL["FeatureAdapterImpl"]
+        LOCAL["LocalDataSource"]
+    end
+
+    APPROOT -.-> DI
+    DI -.-> IMPL
+    UI --> VM
+    VM -.o PORT
+    IMPL --o PORT
+    IMPL --> LOCAL
+```text
+
+Lectura semantica minima de este diagrama:
+
+1. `-->` dependencia directa en runtime.
+2. `-.->` wiring y configuracion de ensamblado.
+3. `-.o` dependencia contra contrato/abstraccion.
+4. `--o` salida/propagacion desde implementacion concreta.
+
