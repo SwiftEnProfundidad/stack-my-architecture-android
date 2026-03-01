@@ -250,8 +250,8 @@ def render_mermaid_arrow_legend() -> str:
         '<line x1="2" y1="6" x2="30" y2="6"></line><polygon points="30,2 38,6 30,10"></polygon>'
         "</svg>Wiring / configuracion</span>"
         '<span class="sma-mermaid-legend-item">'
-        '<svg class="sma-legend-arrow contract-closed" viewBox="0 0 40 12" aria-hidden="true">'
-        '<line x1="2" y1="6" x2="30" y2="6"></line><polygon points="30,2 38,6 30,10"></polygon>'
+        '<svg class="sma-legend-arrow contract-open" viewBox="0 0 40 12" aria-hidden="true">'
+        '<line x1="2" y1="6" x2="30" y2="6"></line><polyline points="30,2 38,6 30,10"></polyline>'
         "</svg>Contrato / abstraccion</span>"
         '<span class="sma-mermaid-legend-item">'
         '<svg class="sma-legend-arrow solid-open" viewBox="0 0 40 12" aria-hidden="true">'
@@ -1216,10 +1216,10 @@ p code, li code, td code {{
     --mermaid-node-border: #1d4ed8;
     --mermaid-line: #1e40af;
     --mermaid-label-bg: #eef2ff;
-    --mermaid-legend-direct: #d946ef;
-    --mermaid-legend-dashed-closed: #64748b;
-    --mermaid-legend-contract: #2563eb;
-    --mermaid-legend-solid-open: #059669;
+    --mermaid-legend-direct: #cbd5e1;
+    --mermaid-legend-dashed-closed: #cbd5e1;
+    --mermaid-legend-contract: #cbd5e1;
+    --mermaid-legend-solid-open: #cbd5e1;
 }}
 
 .sma-mermaid-block {{
@@ -1279,13 +1279,13 @@ p code, li code, td code {{
 }}
 
 .sma-legend-arrow.dashed-closed line,
-.sma-legend-arrow.contract-closed line {{
+.sma-legend-arrow.contract-open line {{
     stroke-dasharray: 6 4;
 }}
 
 .sma-legend-arrow.direct-closed {{ color: var(--mermaid-legend-direct); }}
 .sma-legend-arrow.dashed-closed {{ color: var(--mermaid-legend-dashed-closed); }}
-.sma-legend-arrow.contract-closed {{ color: var(--mermaid-legend-contract); }}
+.sma-legend-arrow.contract-open {{ color: var(--mermaid-legend-contract); }}
 .sma-legend-arrow.solid-open {{ color: var(--mermaid-legend-solid-open); }}
 
 .sma-architecture-block {{
