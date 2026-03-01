@@ -89,7 +89,7 @@ flowchart LR
     CONTAINER -.-> VM
 
     UI --> VM
-    VM -.o PORT
+    VM ==> PORT
     IMPL --o PORT
     IMPL --> DAO
     IMPL --> API
@@ -101,7 +101,7 @@ Lectura semántica conexión por conexión:
    `TasksScreen --> TasksViewModel`, `TasksRepositoryImpl --> TasksDao`, `TasksRepositoryImpl --> TasksApi`.
 2. `-.->` wiring/configuración:
    `@HiltAndroidApp`, `TasksModule` y `Hilt Container` conectan dependencias, pero no ejecutan caso de uso por sí mismos.
-3. `-.o` contrato/abstracción:
+3. `==>` contrato/abstracción:
    `TasksViewModel` depende del contrato `TasksRepository` en lugar de una clase concreta.
 4. `--o` salida/propagación:
    `TasksRepositoryImpl` satisface y propaga ese contrato hacia el flujo real de datos.

@@ -401,7 +401,7 @@ flowchart LR
     APPROOT -.-> DI
     DI -.-> IMPL
     UI --> VM
-    VM -.o PORT
+    VM ==> PORT
     IMPL --o PORT
     IMPL --> LOCAL
 ```text
@@ -410,6 +410,6 @@ Lectura semantica minima de este diagrama:
 
 1. `-->` dependencia directa en runtime.
 2. `-.->` wiring y configuracion de ensamblado.
-3. `-.o` dependencia contra contrato/abstraccion.
+3. `==>` dependencia contra contrato/abstraccion.
 4. `--o` salida/propagacion desde implementacion concreta.
 

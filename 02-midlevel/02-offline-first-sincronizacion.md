@@ -74,8 +74,8 @@ flowchart LR
 
     UI --> VM
     VM --> REPO
-    REPO -.o STORE_PORT
-    REPO -.o SYNC_PORT
+    REPO ==> STORE_PORT
+    REPO ==> SYNC_PORT
 
     ROOM --o STORE_PORT
     ORCH --o SYNC_PORT
@@ -89,7 +89,7 @@ Cómo leerlo correctamente:
    `TasksViewModel --> TasksRepository`, `TasksSyncOrchestrator --> TasksApi`, `TasksSyncOrchestrator --> WorkManager`.
 2. `-.->` wiring/configuración:
    `AppRoot + Hilt` ensamblan dependencias (`TasksRepository`, `TasksSyncOrchestrator`) sin ejecutar reglas de negocio.
-3. `-.o` contrato/abstracción:
+3. `==>` contrato/abstracción:
    el repositorio habla con puertos (`LocalTasksStore`, `TasksSyncPort`) y no con implementaciones concretas.
 4. `--o` salida/propagación:
    `RoomTasksStore` y `TasksSyncOrchestrator` cumplen esos puertos y conectan el core con infra real.

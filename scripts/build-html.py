@@ -262,6 +262,99 @@ def render_mermaid_arrow_legend() -> str:
     )
 
 
+ARROW_SEMANTIC_BLOCK_RE = re.compile(
+    r'(<p>[^<]*lectura[^<]*semantica[^<]*diagrama[^<]*:</p>\s*<(?:ol|ul)>\s*)(.*?)(\s*</(?:ol|ul)>)',
+    flags=re.IGNORECASE | re.DOTALL,
+)
+ARROW_SEMANTIC_ITEM_RE = re.compile(
+    r"<li>\s*(?:<code>[^<]*</code>\s*)?(.*?)\s*</li>",
+    flags=re.IGNORECASE | re.DOTALL,
+)
+ARROW_CODE_LIST_ITEM_RE = re.compile(
+    r"<li>\s*<code>\s*(--&gt;|-->|-\.\-&gt;|-.->|==&gt;|==>|--o)\s*</code>\s*(.*?)\s*</li>",
+    flags=re.IGNORECASE | re.DOTALL,
+)
+ARROW_SEMANTIC_FALLBACK_VARIANTS = (
+    "direct-closed",
+    "dashed-closed",
+    "contract-open",
+    "solid-open",
+)
+ARROW_CODE_TOKEN_VARIANT = {
+    "--&gt;": "direct-closed",
+    "-->": "direct-closed",
+    "-.-&gt;": "dashed-closed",
+    "-.->": "dashed-closed",
+    "==&gt;": "contract-open",
+    "==>": "contract-open",
+    "--o": "solid-open",
+}
+
+
+def _arrow_variant_for_semantic_text(raw_text: str, index: int) -> str:
+    normalized = html.unescape(re.sub(r"<[^>]+>", "", raw_text or "")).strip().lower()
+    normalized = re.sub(r"\s+", " ", normalized)
+    if "directa" in normalized or "runtime" in normalized:
+        return "direct-closed"
+    if "wiring" in normalized or "configuracion" in normalized:
+        return "dashed-closed"
+    if "contrato" in normalized or "abstraccion" in normalized:
+        return "contract-open"
+    if "salida" in normalized or "propagacion" in normalized:
+        return "solid-open"
+    safe_index = min(max(index, 0), len(ARROW_SEMANTIC_FALLBACK_VARIANTS) - 1)
+    return ARROW_SEMANTIC_FALLBACK_VARIANTS[safe_index]
+
+
+def _render_semantic_arrow_icon(variant: str) -> str:
+    is_closed = variant in {"direct-closed", "dashed-closed"}
+    head = (
+        '<polygon points="30,2 38,6 30,10"></polygon>'
+        if is_closed
+        else '<polyline points="30,2 38,6 30,10"></polyline>'
+    )
+    return (
+        f'<svg class="sma-legend-arrow {variant} sma-semantic-arrow-icon" viewBox="0 0 40 12" aria-hidden="true">'
+        '<line x1="2" y1="6" x2="30" y2="6"></line>'
+        f"{head}"
+        "</svg>"
+    )
+
+
+def enhance_semantic_arrow_lists(html_fragment: str) -> str:
+    def replace_block(match: re.Match) -> str:
+        item_markup = []
+        for index, raw_item in enumerate(ARROW_SEMANTIC_ITEM_RE.findall(match.group(2))):
+            item_text = (raw_item or "").strip()
+            if not item_text:
+                continue
+            variant = _arrow_variant_for_semantic_text(item_text, index)
+            icon = _render_semantic_arrow_icon(variant)
+            item_markup.append(
+                f'  <li class="sma-semantic-arrow-item">{icon}<span>{item_text}</span></li>'
+            )
+        if not item_markup:
+            return match.group(0)
+        return f'{match.group(1)}\n' + "\n".join(item_markup) + f'\n{match.group(3)}'
+
+    return ARROW_SEMANTIC_BLOCK_RE.sub(replace_block, html_fragment)
+
+
+def enhance_arrow_code_list_items(html_fragment: str) -> str:
+    def replace_item(match: re.Match) -> str:
+        token = (match.group(1) or "").strip().lower()
+        text = (match.group(2) or "").strip()
+        if not text:
+            return match.group(0)
+        variant = ARROW_CODE_TOKEN_VARIANT.get(token)
+        if not variant:
+            return match.group(0)
+        icon = _render_semantic_arrow_icon(variant)
+        return f'<li class="sma-semantic-arrow-item">{icon}<span>{text}</span></li>'
+
+    return ARROW_CODE_LIST_ITEM_RE.sub(replace_item, html_fragment)
+
+
 def render_layered_architecture_svg(raw_code_content: str) -> str:
     titles = {
         "CORE": _extract_mermaid_subgraph_title(raw_code_content, "CORE", "Core / Domain"),
@@ -371,7 +464,7 @@ def md_to_html(md_text, file_id, file_path):
     lines = md_text.split("\n")
     i = 0
     in_code = False
-    in_list = False
+    list_tag = ""
     in_table = False
     code_lang = ""
     code_buffer = []
@@ -382,9 +475,9 @@ def md_to_html(md_text, file_id, file_path):
 
         # Code blocks
         if line.strip().startswith("```") and not in_code:
-            if in_list:
-                html += "</ul>\n"
-                in_list = False
+            if list_tag:
+                html += f"</{list_tag}>\n"
+                list_tag = ""
             code_lang = line.strip()[3:].strip()
             in_code = True
             code_buffer = []
@@ -418,9 +511,9 @@ def md_to_html(md_text, file_id, file_path):
         # Tables
         if "|" in line and line.strip().startswith("|"):
             if not in_table:
-                if in_list:
-                    html += "</ul>\n"
-                    in_list = False
+                if list_tag:
+                    html += f"</{list_tag}>\n"
+                    list_tag = ""
                 in_table = True
                 table_buffer = []
             table_buffer.append(line)
@@ -435,9 +528,9 @@ def md_to_html(md_text, file_id, file_path):
         # Headers
         header_match = re.match(r"^(#{1,6})\s+(.+)$", line)
         if header_match:
-            if in_list:
-                html += "</ul>\n"
-                in_list = False
+            if list_tag:
+                html += f"</{list_tag}>\n"
+                list_tag = ""
             level = len(header_match.group(1))
             text = inline_format(header_match.group(2))
             anchor = re.sub(r"[^a-z0-9]+", "-", text.lower().strip())
@@ -448,18 +541,21 @@ def md_to_html(md_text, file_id, file_path):
 
         # Horizontal rule
         if re.match(r"^---+\s*$", line):
-            if in_list:
-                html += "</ul>\n"
-                in_list = False
+            if list_tag:
+                html += f"</{list_tag}>\n"
+                list_tag = ""
             html += "<hr>\n"
             i += 1
             continue
 
         # List items
         if re.match(r"^\s*[-*]\s+", line):
-            if not in_list:
+            if list_tag == "ol":
+                html += "</ol>\n"
+                list_tag = ""
+            if not list_tag:
                 html += "<ul>\n"
-                in_list = True
+                list_tag = "ul"
             content = re.sub(r"^\s*[-*]\s+", "", line)
             # Handle checkbox
             content = content.replace("[ ]", "&#9744;").replace("[x]", "&#9745;")
@@ -469,21 +565,21 @@ def md_to_html(md_text, file_id, file_path):
 
         # Numbered list
         if re.match(r"^\s*\d+[.)]\s+", line):
-            if not in_list:
+            if list_tag == "ul":
+                html += "</ul>\n"
+                list_tag = ""
+            if not list_tag:
                 html += "<ol>\n"
-                in_list = True
+                list_tag = "ol"
             content = re.sub(r"^\s*\d+[.)]\s+", "", line)
             html += f"  <li>{inline_format(content)}</li>\n"
             i += 1
             continue
 
         # Close list if we hit non-list content
-        if in_list and line.strip():
-            if html.rstrip().endswith("</ol>") or "<ol>" in html[-200:]:
-                html += "</ol>\n"
-            else:
-                html += "</ul>\n"
-            in_list = False
+        if list_tag and line.strip():
+            html += f"</{list_tag}>\n"
+            list_tag = ""
 
         # Empty lines
         if not line.strip():
@@ -499,11 +595,13 @@ def md_to_html(md_text, file_id, file_path):
         html += f"<p>{inline_format(line)}</p>\n"
         i += 1
 
-    if in_list:
-        html += "</ul>\n"
+    if list_tag:
+        html += f"</{list_tag}>\n"
     if in_table:
         html += render_table(table_buffer)
 
+    html = enhance_semantic_arrow_lists(html)
+    html = enhance_arrow_code_list_items(html)
     return html
 
 
@@ -1317,6 +1415,17 @@ p code, li code, td code {{
 .sma-legend-arrow.dashed-closed {{ color: var(--mermaid-legend-dashed-closed); }}
 .sma-legend-arrow.contract-open {{ color: var(--mermaid-legend-contract); }}
 .sma-legend-arrow.solid-open {{ color: var(--mermaid-legend-solid-open); }}
+
+.sma-semantic-arrow-item .sma-semantic-arrow-icon {{
+    width: 42px;
+    height: 12px;
+    margin-right: 8px;
+    vertical-align: middle;
+}}
+
+.sma-semantic-arrow-item > span {{
+    vertical-align: middle;
+}}
 
 .sma-architecture-block {{
     margin-top: var(--space-md);
