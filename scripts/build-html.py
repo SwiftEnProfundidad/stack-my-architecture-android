@@ -647,10 +647,10 @@ def build_html():
 <link rel="stylesheet" href="assets/study-ux.css?v=__ASSET_VERSION__">
 <link rel="stylesheet" href="assets/course-switcher.css?v=__ASSET_VERSION__">
 <link rel="stylesheet" href="assets/assistant-panel.css?v=__ASSET_VERSION__">
+<script>window.__SMA_ASSISTANT_PANEL_SRC = "assets/assistant-panel.js?v=__ASSET_VERSION__";</script>
 <script defer src="assets/study-ux.js?v=__ASSET_VERSION__"></script>
 <script defer src="assets/course-switcher.js?v=__ASSET_VERSION__"></script>
 <script defer src="assets/theme-controls.js?v=__ASSET_VERSION__"></script>
-<script defer src="assets/assistant-panel.js?v=__ASSET_VERSION__"></script>
 <script defer src="assets/assistant-bridge.js?v=__ASSET_VERSION__"></script>
 
 <!-- Google Fonts - Inter -->
@@ -659,12 +659,12 @@ def build_html():
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&display=swap" rel="stylesheet">
 
 <!-- Mermaid.js para diagramas -->
-<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 
 <!-- Highlight.js para syntax highlighting -->
 <link id="hljs-theme" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/monokai.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
 
 <style>
 /* ============================================
@@ -1058,6 +1058,14 @@ section.lesson {{
     overflow-wrap: break-word;
     content-visibility: auto;
     contain-intrinsic-size: 1200px;
+}}
+
+body:not(.sma-hydrated) section.lesson {{
+    display: none;
+}}
+
+body:not(.sma-hydrated) section.lesson:first-of-type {{
+    display: block;
 }}
 
 section.lesson > * {{
@@ -2147,11 +2155,17 @@ function renderMermaid() {{
     }});
 }}
 
-// Init Mermaid
-renderMermaid();
+function bootCourseRenderers() {{
+    renderMermaid();
+    initCodeHighlighting();
+    document.body.classList.add('sma-hydrated');
+}}
 
-// Init Highlight.js
-initCodeHighlighting();
+if (document.readyState === 'loading') {{
+    document.addEventListener('DOMContentLoaded', bootCourseRenderers, {{ once: true }});
+}} else {{
+    bootCourseRenderers();
+}}
 
 // Back to top button
 window.addEventListener('scroll', () => {{
