@@ -536,7 +536,11 @@ def inline_format(text):
     # Links
     text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r'<a href="\2">\1</a>', text)
     # Images
-    text = re.sub(r"!\[([^\]]*)\]\(([^)]+)\)", r'<img alt="\1" src="\2">', text)
+    text = re.sub(
+        r"!\[([^\]]*)\]\(([^)]+)\)",
+        r'<img alt="\1" src="\2" loading="lazy" decoding="async">',
+        text,
+    )
     return text
 
 
@@ -1039,6 +1043,21 @@ body {{
     padding: var(--space-3xl) var(--space-2xl);
     width: calc(100% - var(--sidebar-width));
     min-height: 100vh;
+}}
+
+section.lesson {{
+    overflow-x: hidden;
+    max-width: 100%;
+    box-sizing: border-box;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    content-visibility: auto;
+    contain-intrinsic-size: 1200px;
+}}
+
+section.lesson > * {{
+    max-width: 100%;
+    box-sizing: border-box;
 }}
 
 /* ============================================
@@ -1857,11 +1876,12 @@ function applyCodeTheme(theme) {{
     }};
     hljsLink.href = `https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/${{themeMap[theme] || 'monokai.min.css'}}`;
     
-    // Re-highlight all code blocks
-    document.querySelectorAll('pre code').forEach(block => {{
+    const highlightedBlocks = document.querySelectorAll('pre code[data-highlighted]');
+    highlightedBlocks.forEach(block => {{
+        block.removeAttribute('data-highlighted');
         hljs.highlightElement(block);
     }});
-    enhanceCodeBlocks();
+    enhanceCodeBlocksFrom(highlightedBlocks);
 }}
 
 function detectSnippetLang(codeEl) {{
@@ -1925,7 +1945,11 @@ function copyCodeToClipboard(text) {{
 }}
 
 function enhanceCodeBlocks() {{
-    document.querySelectorAll('pre code').forEach(code => {{
+    enhanceCodeBlocksFrom(document.querySelectorAll('pre code'));
+}}
+
+function enhanceCodeBlocksFrom(codes) {{
+    Array.from(codes || []).forEach(code => {{
         const pre = code.closest('pre');
         if (!pre || pre.classList.contains('mermaid')) return;
         if (pre.dataset.codeEnhanced === '1') return;
@@ -1960,6 +1984,39 @@ function enhanceCodeBlocks() {{
         tools.appendChild(lang);
         tools.appendChild(copyBtn);
         pre.appendChild(tools);
+    }});
+}}
+
+function highlightCodeBlock(block) {{
+    if (!block || block.dataset.highlighted === '1') return;
+    hljs.highlightElement(block);
+    block.dataset.highlighted = '1';
+    enhanceCodeBlocksFrom([block]);
+}}
+
+function initCodeHighlighting() {{
+    const blocks = Array.from(document.querySelectorAll('pre code'));
+    if (!blocks.length) return;
+
+    const warmup = blocks.slice(0, 16);
+    warmup.forEach(highlightCodeBlock);
+
+    if (!('IntersectionObserver' in window)) {{
+        blocks.forEach(highlightCodeBlock);
+        return;
+    }}
+
+    const codeObserver = new IntersectionObserver((entries, observerRef) => {{
+        entries.forEach(entry => {{
+            if (!entry.isIntersecting) return;
+            highlightCodeBlock(entry.target);
+            observerRef.unobserve(entry.target);
+        }});
+    }}, {{ rootMargin: '360px 0px' }});
+
+    blocks.forEach(block => {{
+        if (block.dataset.highlighted === '1') return;
+        codeObserver.observe(block);
     }});
 }}
 
@@ -2003,7 +2060,10 @@ function renderMermaid() {{
         return;
     }}
 
-    document.querySelectorAll('pre.mermaid').forEach(function(el) {{
+    const blocks = Array.from(document.querySelectorAll('pre.mermaid'));
+    if (!blocks.length) return;
+
+    blocks.forEach(function(el) {{
         if (!el.dataset.originalMermaid) {{
             el.dataset.originalMermaid = (el.textContent || '').trimEnd();
         }}
@@ -2011,6 +2071,7 @@ function renderMermaid() {{
             el.innerHTML = '';
             el.textContent = el.dataset.originalMermaid;
         }}
+        el.dataset.mermaidRendered = '0';
         el.removeAttribute('data-processed');
     }});
 
@@ -2020,17 +2081,41 @@ function renderMermaid() {{
         securityLevel: 'loose'
     }});
 
-    mermaid.run({{ querySelector: 'pre.mermaid' }});
+    function renderNode(el) {{
+        if (!el || el.dataset.mermaidRendered === '1') return;
+        mermaid.run({{ nodes: [el] }})
+            .then(function() {{
+                el.dataset.mermaidRendered = '1';
+            }})
+            .catch(function() {{}});
+    }}
+
+    blocks.slice(0, 3).forEach(renderNode);
+
+    if (!('IntersectionObserver' in window)) {{
+        blocks.forEach(renderNode);
+        return;
+    }}
+
+    const mermaidObserver = new IntersectionObserver((entries, observerRef) => {{
+        entries.forEach(entry => {{
+            if (!entry.isIntersecting) return;
+            renderNode(entry.target);
+            observerRef.unobserve(entry.target);
+        }});
+    }}, {{ rootMargin: '420px 0px' }});
+
+    blocks.forEach(el => {{
+        if (el.dataset.mermaidRendered === '1') return;
+        mermaidObserver.observe(el);
+    }});
 }}
 
 // Init Mermaid
 renderMermaid();
 
 // Init Highlight.js
-document.querySelectorAll('pre code').forEach(block => {{
-    hljs.highlightElement(block);
-}});
-enhanceCodeBlocks();
+initCodeHighlighting();
 
 // Back to top button
 window.addEventListener('scroll', () => {{
