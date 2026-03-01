@@ -60,6 +60,54 @@ flowchart TD
 
 Lectura del diagrama: la app arranca Hilt, el módulo registra proveedores, el contenedor construye ViewModel con dependencias, y la pantalla obtiene el ViewModel.
 
+## Lectura de flechas aplicada a módulos reales (sin ambigüedad)
+
+Para que el diagrama no sea decorativo, aquí se aplican las 4 flechas sobre piezas reales del curso:
+
+```mermaid
+flowchart LR
+    subgraph APP["App module"]
+        APPSTART["@HiltAndroidApp\nApplication"]
+        MODULE["TasksModule\n@Provides"]
+        CONTAINER["Hilt Container"]
+    end
+
+    subgraph FEATURE["Tasks feature module"]
+        UI["TasksScreen"]
+        VM["TasksViewModel"]
+        PORT["TasksRepository\n(interface)"]
+    end
+
+    subgraph DATA["Data module"]
+        IMPL["TasksRepositoryImpl"]
+        DAO["TasksDao"]
+        API["TasksApi"]
+    end
+
+    APPSTART -.-> CONTAINER
+    MODULE -.-> CONTAINER
+    CONTAINER -.-> VM
+
+    UI --> VM
+    VM ==> PORT
+    IMPL --o PORT
+    IMPL --> DAO
+    IMPL --> API
+```text
+
+Lectura semántica conexión por conexión:
+
+1. `-->` dependencia directa en runtime:
+   `TasksScreen --> TasksViewModel`, `TasksRepositoryImpl --> TasksDao`, `TasksRepositoryImpl --> TasksApi`.
+2. `-.->` wiring/configuración:
+   `@HiltAndroidApp`, `TasksModule` y `Hilt Container` conectan dependencias, pero no ejecutan caso de uso por sí mismos.
+3. `==>` contrato/abstracción:
+   `TasksViewModel` depende del contrato `TasksRepository` en lugar de una clase concreta.
+4. `--o` salida/propagación:
+   `TasksRepositoryImpl` satisface y propaga ese contrato hacia el flujo real de datos.
+
+Si en revisión técnica ves `TasksViewModel --> TasksRepositoryImpl`, hay fuga de infraestructura.
+
 ---
 
 ## 3) Paso 1 · Preparar la clase Application

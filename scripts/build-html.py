@@ -11,6 +11,7 @@ import sys
 import shutil
 import html
 import time
+import hashlib
 from pathlib import Path
 
 COURSE_ROOT = Path(__file__).parent.parent
@@ -137,7 +138,7 @@ MERMAID_ARROW_LEGEND_KEYWORDS = (
 
 def mermaid_needs_arrow_legend(raw_code_content: str, file_path: str) -> bool:
     source = f"{file_path}\n{raw_code_content}".lower()
-    relation_tokens = ("-->", "-.->", "<|--", "--|>", "..|>", "..>", "o--", "*--")
+    relation_tokens = ("-->", "-.->", "==>", "--o", "<|--", "--|>", "..|>", "..>", "o--", "*--")
     has_relations = any(token in raw_code_content for token in relation_tokens)
     if not has_relations:
         return False
@@ -154,27 +155,306 @@ def normalize_mermaid_source(raw_code_content: str) -> str:
     if is_flowchart:
         normalized = re.sub(r"\.\.\>\|", "-.->|", normalized)
         normalized = re.sub(r"\.\.\>", "-.->", normalized)
+        normalized = normalized.replace("-.o", "-.->")
     if is_state_diagram:
         normalized = re.sub(r"-\.\->", "-->", normalized)
     return normalized
 
 
+def _clean_mermaid_label(raw_label: str) -> str:
+    label = raw_label.strip()
+    if len(label) >= 2 and ((label[0] == '"' and label[-1] == '"') or (label[0] == "'" and label[-1] == "'")):
+        label = label[1:-1]
+    label = label.replace("<br/>", "\n").replace("<br>", "\n").replace("\\n", "\n")
+    label = re.sub(r"\s*\n\s*", "\n", label)
+    return label.strip()
+
+
+def _extract_mermaid_label(raw_code_content: str, node_id: str, default: str) -> str:
+    pattern = rf"^\s*{re.escape(node_id)}\s*\[(.+?)\]\s*$"
+    match = re.search(pattern, raw_code_content, flags=re.MULTILINE)
+    if not match:
+        return default
+    parsed = _clean_mermaid_label(match.group(1))
+    return parsed if parsed else default
+
+
+def _extract_mermaid_subgraph_title(raw_code_content: str, subgraph_id: str, default: str) -> str:
+    pattern = rf"subgraph\s+{re.escape(subgraph_id)}\s*\[(.+?)\]"
+    match = re.search(pattern, raw_code_content)
+    if not match:
+        return default
+    parsed = _clean_mermaid_label(match.group(1))
+    return parsed if parsed else default
+
+
+def _split_svg_lines(label: str, max_chars: int = 20) -> list[str]:
+    lines = []
+    for raw_line in label.split("\n"):
+        normalized = re.sub(r"\s+", " ", raw_line).strip()
+        if not normalized:
+            continue
+        words = normalized.split(" ")
+        current = ""
+        for word in words:
+            candidate = word if not current else f"{current} {word}"
+            if len(candidate) <= max_chars:
+                current = candidate
+            else:
+                if current:
+                    lines.append(current)
+                current = word
+        if current:
+            lines.append(current)
+    return lines if lines else [label.strip() or "-"]
+
+
+def _svg_text(x: float, y: float, label: str, css_class: str, max_chars: int = 20) -> str:
+    lines = _split_svg_lines(label, max_chars=max_chars)
+    base_y = y - (len(lines) - 1) * 8
+    tspans = []
+    for index, line in enumerate(lines):
+        dy = "0" if index == 0 else "1.3em"
+        tspans.append(f'<tspan x="{x}" dy="{dy}">{html.escape(line)}</tspan>')
+    return f'<text x="{x}" y="{base_y}" class="{css_class}" text-anchor="middle">{"".join(tspans)}</text>'
+
+
+def is_layered_architecture_mermaid(raw_code_content: str) -> bool:
+    normalized = raw_code_content.lower()
+    required_tokens = (
+        "flowchart",
+        "subgraph core",
+        "subgraph app",
+        "subgraph ui",
+        "subgraph infra",
+        "vm --> uc",
+        "uc --> ent",
+        "uc ==> port",
+        "boot -.->",
+        "port --o",
+    )
+    return all(token in normalized for token in required_tokens)
+
+
+def render_mermaid_arrow_legend() -> str:
+    return (
+        '<div class="sma-mermaid-legend" role="note" aria-label="Leyenda de flechas para diagramas de arquitectura">'
+        '<p class="sma-mermaid-legend-title">Leyenda de flechas</p>'
+        '<div class="sma-mermaid-legend-grid">'
+        '<span class="sma-mermaid-legend-item">'
+        '<svg class="sma-legend-arrow direct-closed" viewBox="0 0 40 12" aria-hidden="true">'
+        '<line x1="2" y1="6" x2="30" y2="6"></line><polygon points="30,2 38,6 30,10"></polygon>'
+        "</svg>Dependencia directa (runtime)</span>"
+        '<span class="sma-mermaid-legend-item">'
+        '<svg class="sma-legend-arrow dashed-closed" viewBox="0 0 40 12" aria-hidden="true">'
+        '<line x1="2" y1="6" x2="30" y2="6"></line><polygon points="30,2 38,6 30,10"></polygon>'
+        "</svg>Wiring / configuracion</span>"
+        '<span class="sma-mermaid-legend-item">'
+        '<svg class="sma-legend-arrow contract-open" viewBox="0 0 40 12" aria-hidden="true">'
+        '<line x1="2" y1="6" x2="30" y2="6"></line><polyline points="30,2 38,6 30,10"></polyline>'
+        "</svg>Contrato / abstraccion</span>"
+        '<span class="sma-mermaid-legend-item">'
+        '<svg class="sma-legend-arrow solid-open" viewBox="0 0 40 12" aria-hidden="true">'
+        '<line x1="2" y1="6" x2="30" y2="6"></line><polyline points="30,2 38,6 30,10"></polyline>'
+        "</svg>Salida / propagacion</span>"
+        "</div>"
+        "</div>\n"
+    )
+
+
+ARROW_SEMANTIC_BLOCK_RE = re.compile(
+    r'(<p>[^<]*lectura[^<]*semantica[^<]*diagrama[^<]*:</p>\s*<(?:ol|ul)>\s*)(.*?)(\s*</(?:ol|ul)>)',
+    flags=re.IGNORECASE | re.DOTALL,
+)
+ARROW_SEMANTIC_ITEM_RE = re.compile(
+    r"<li>\s*(?:<code>[^<]*</code>\s*)?(.*?)\s*</li>",
+    flags=re.IGNORECASE | re.DOTALL,
+)
+ARROW_CODE_LIST_ITEM_RE = re.compile(
+    r"<li>\s*<code>\s*(--&gt;|-->|-\.\-&gt;|-.->|==&gt;|==>|--o)\s*</code>\s*(.*?)\s*</li>",
+    flags=re.IGNORECASE | re.DOTALL,
+)
+ARROW_SEMANTIC_FALLBACK_VARIANTS = (
+    "direct-closed",
+    "dashed-closed",
+    "contract-open",
+    "solid-open",
+)
+ARROW_CODE_TOKEN_VARIANT = {
+    "--&gt;": "direct-closed",
+    "-->": "direct-closed",
+    "-.-&gt;": "dashed-closed",
+    "-.->": "dashed-closed",
+    "==&gt;": "contract-open",
+    "==>": "contract-open",
+    "--o": "solid-open",
+}
+
+
+def _arrow_variant_for_semantic_text(raw_text: str, index: int) -> str:
+    normalized = html.unescape(re.sub(r"<[^>]+>", "", raw_text or "")).strip().lower()
+    normalized = re.sub(r"\s+", " ", normalized)
+    if "directa" in normalized or "runtime" in normalized:
+        return "direct-closed"
+    if "wiring" in normalized or "configuracion" in normalized:
+        return "dashed-closed"
+    if "contrato" in normalized or "abstraccion" in normalized:
+        return "contract-open"
+    if "salida" in normalized or "propagacion" in normalized:
+        return "solid-open"
+    safe_index = min(max(index, 0), len(ARROW_SEMANTIC_FALLBACK_VARIANTS) - 1)
+    return ARROW_SEMANTIC_FALLBACK_VARIANTS[safe_index]
+
+
+def _render_semantic_arrow_icon(variant: str) -> str:
+    is_closed = variant in {"direct-closed", "dashed-closed"}
+    head = (
+        '<polygon points="30,2 38,6 30,10"></polygon>'
+        if is_closed
+        else '<polyline points="30,2 38,6 30,10"></polyline>'
+    )
+    return (
+        f'<svg class="sma-legend-arrow {variant} sma-semantic-arrow-icon" viewBox="0 0 40 12" aria-hidden="true">'
+        '<line x1="2" y1="6" x2="30" y2="6"></line>'
+        f"{head}"
+        "</svg>"
+    )
+
+
+def enhance_semantic_arrow_lists(html_fragment: str) -> str:
+    def replace_block(match: re.Match) -> str:
+        item_markup = []
+        for index, raw_item in enumerate(ARROW_SEMANTIC_ITEM_RE.findall(match.group(2))):
+            item_text = (raw_item or "").strip()
+            if not item_text:
+                continue
+            variant = _arrow_variant_for_semantic_text(item_text, index)
+            icon = _render_semantic_arrow_icon(variant)
+            item_markup.append(
+                f'  <li class="sma-semantic-arrow-item">{icon}<span>{item_text}</span></li>'
+            )
+        if not item_markup:
+            return match.group(0)
+        return f'{match.group(1)}\n' + "\n".join(item_markup) + f'\n{match.group(3)}'
+
+    return ARROW_SEMANTIC_BLOCK_RE.sub(replace_block, html_fragment)
+
+
+def enhance_arrow_code_list_items(html_fragment: str) -> str:
+    def replace_item(match: re.Match) -> str:
+        token = (match.group(1) or "").strip().lower()
+        text = (match.group(2) or "").strip()
+        if not text:
+            return match.group(0)
+        variant = ARROW_CODE_TOKEN_VARIANT.get(token)
+        if not variant:
+            return match.group(0)
+        icon = _render_semantic_arrow_icon(variant)
+        return f'<li class="sma-semantic-arrow-item">{icon}<span>{text}</span></li>'
+
+    return ARROW_CODE_LIST_ITEM_RE.sub(replace_item, html_fragment)
+
+
+def render_layered_architecture_svg(raw_code_content: str) -> str:
+    titles = {
+        "CORE": _extract_mermaid_subgraph_title(raw_code_content, "CORE", "Core / Domain"),
+        "APP": _extract_mermaid_subgraph_title(raw_code_content, "APP", "Application"),
+        "UI": _extract_mermaid_subgraph_title(raw_code_content, "UI", "Interface"),
+        "INFRA": _extract_mermaid_subgraph_title(raw_code_content, "INFRA", "Infrastructure"),
+    }
+
+    labels = {
+        "VM": _extract_mermaid_label(raw_code_content, "VM", "ViewModel"),
+        "VIEW": _extract_mermaid_label(raw_code_content, "VIEW", "View"),
+        "ENT": _extract_mermaid_label(raw_code_content, "ENT", "Entity"),
+        "POL": _extract_mermaid_label(raw_code_content, "POL", "Policy"),
+        "BOOT": _extract_mermaid_label(raw_code_content, "BOOT", "Composition Root"),
+        "UC": _extract_mermaid_label(raw_code_content, "UC", "UseCase"),
+        "PORT": _extract_mermaid_label(raw_code_content, "PORT", "FeaturePort"),
+        "API": _extract_mermaid_label(raw_code_content, "API", "API Client"),
+        "STORE": _extract_mermaid_label(raw_code_content, "STORE", "Persistence Adapter"),
+    }
+
+    layer_boxes = {
+        "UI": (100, 80, 300, 240),
+        "CORE": (100, 350, 300, 220),
+        "APP": (420, 520, 380, 190),
+        "INFRA": (830, 80, 350, 630),
+    }
+    nodes = {
+        "VM": (145, 140, 170, 58, "UI"),
+        "VIEW": (165, 235, 130, 58, "UI"),
+        "ENT": (170, 395, 130, 58, "CORE"),
+        "POL": (175, 480, 120, 58, "CORE"),
+        "BOOT": (470, 550, 280, 54, "APP"),
+        "UC": (470, 625, 120, 58, "APP"),
+        "PORT": (620, 625, 170, 58, "APP"),
+        "API": (900, 220, 200, 70, "INFRA"),
+        "STORE": (880, 520, 240, 74, "INFRA"),
+    }
+
+    node_markup = []
+    for node_id, (x, y, width, height, layer_id) in nodes.items():
+        node_markup.append(
+            f'<rect x="{x}" y="{y}" width="{width}" height="{height}" rx="8" class="sma-arch-node sma-arch-node-{layer_id.lower()}"></rect>'
+        )
+        node_markup.append(_svg_text(x + width / 2, y + height / 2 + 5, labels[node_id], "sma-arch-node-label", max_chars=22))
+
+    layer_markup = []
+    for layer_id, (x, y, width, height) in layer_boxes.items():
+        layer_markup.append(
+            f'<rect x="{x}" y="{y}" width="{width}" height="{height}" rx="16" class="sma-arch-layer sma-arch-layer-{layer_id.lower()}"></rect>'
+        )
+        layer_markup.append(_svg_text(x + width / 2, y + 26, titles[layer_id], "sma-arch-layer-label", max_chars=28))
+
+    marker_seed = hashlib.md5(raw_code_content.encode("utf-8")).hexdigest()[:10]
+    marker_direct = f"sma-head-direct-{marker_seed}"
+    marker_wiring = f"sma-head-wiring-{marker_seed}"
+    marker_contract = f"sma-head-contract-{marker_seed}"
+    marker_open = f"sma-head-open-{marker_seed}"
+
+    legend_html = render_mermaid_arrow_legend()
+    return (
+        '<div class="sma-mermaid-block sma-architecture-block">\n'
+        f"{legend_html}"
+        '<div class="sma-architecture-svg-wrap" role="img" aria-label="Diagrama de arquitectura por capas del curso">'
+        '<svg class="sma-architecture-svg" viewBox="0 0 1280 780" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">'
+        "<defs>"
+        f'<marker id="{marker_direct}" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="strokeWidth">'
+        '<path d="M0,0 L10,5 L0,10 z" class="sma-arch-head-direct"></path></marker>'
+        f'<marker id="{marker_wiring}" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="strokeWidth">'
+        '<path d="M0,0 L10,5 L0,10 z" class="sma-arch-head-wiring"></path></marker>'
+        f'<marker id="{marker_contract}" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="strokeWidth">'
+        '<path d="M0,0 L10,5 L0,10 z" class="sma-arch-head-contract"></path></marker>'
+        f'<marker id="{marker_open}" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="strokeWidth">'
+        '<path d="M0,0 L10,5 L0,10" class="sma-arch-head-open"></path></marker>'
+        "</defs>"
+        '<rect x="8" y="8" width="1264" height="764" rx="20" class="sma-arch-board"></rect>'
+        f'{"".join(layer_markup)}'
+        f'{"".join(node_markup)}'
+        f'<path d="M315 169 C380 250 410 470 470 654" class="sma-arch-edge sma-arch-edge-direct" marker-end="url(#{marker_direct})"></path>'
+        f'<path d="M470 654 C400 620 300 540 235 424" class="sma-arch-edge sma-arch-edge-direct" marker-end="url(#{marker_direct})"></path>'
+        f'<path d="M590 654 L620 654" class="sma-arch-edge sma-arch-edge-contract" marker-end="url(#{marker_contract})"></path>'
+        f'<path d="M610 604 L705 625" class="sma-arch-edge sma-arch-edge-wiring" marker-end="url(#{marker_wiring})"></path>'
+        f'<path d="M750 577 C810 510 850 360 900 255" class="sma-arch-edge sma-arch-edge-wiring" marker-end="url(#{marker_wiring})"></path>'
+        f'<path d="M750 594 L880 557" class="sma-arch-edge sma-arch-edge-wiring" marker-end="url(#{marker_wiring})"></path>'
+        f'<path d="M790 654 C860 600 890 410 900 255" class="sma-arch-edge sma-arch-edge-open" marker-end="url(#{marker_open})"></path>'
+        f'<path d="M790 654 L880 557" class="sma-arch-edge sma-arch-edge-open" marker-end="url(#{marker_open})"></path>'
+        f'<path d="M470 654 C400 520 345 330 315 169" class="sma-arch-edge sma-arch-edge-open" marker-end="url(#{marker_open})"></path>'
+        "</svg>"
+        "</div>\n"
+        "</div>\n"
+    )
+
+
 def render_mermaid_block(raw_code_content: str, file_path: str) -> str:
     normalized_code_content = normalize_mermaid_source(raw_code_content)
+    if is_layered_architecture_mermaid(normalized_code_content):
+        return render_layered_architecture_svg(normalized_code_content)
     escaped_mermaid_code = html.escape(normalized_code_content)
     legend_html = ""
     if mermaid_needs_arrow_legend(normalized_code_content, file_path):
-        legend_html = (
-            '<div class="sma-mermaid-legend" role="note" aria-label="Leyenda de flechas para diagramas de arquitectura">'
-            '<p class="sma-mermaid-legend-title">Leyenda de flechas</p>'
-            '<div class="sma-mermaid-legend-grid">'
-            '<span class="sma-mermaid-legend-item"><i class="sma-arrow direct-closed"></i>Dependencia directa (runtime)</span>'
-            '<span class="sma-mermaid-legend-item"><i class="sma-arrow dashed-closed"></i>Wiring / configuracion</span>'
-            '<span class="sma-mermaid-legend-item"><i class="sma-arrow dashed-open"></i>Contrato / abstraccion</span>'
-            '<span class="sma-mermaid-legend-item"><i class="sma-arrow solid-open"></i>Salida / propagacion</span>'
-            "</div>"
-            "</div>\n"
-        )
+        legend_html = render_mermaid_arrow_legend()
     return f'<div class="sma-mermaid-block">\n{legend_html}<pre class="mermaid">{escaped_mermaid_code}</pre>\n</div>\n'
 
 
@@ -184,7 +464,7 @@ def md_to_html(md_text, file_id, file_path):
     lines = md_text.split("\n")
     i = 0
     in_code = False
-    in_list = False
+    list_tag = ""
     in_table = False
     code_lang = ""
     code_buffer = []
@@ -195,9 +475,9 @@ def md_to_html(md_text, file_id, file_path):
 
         # Code blocks
         if line.strip().startswith("```") and not in_code:
-            if in_list:
-                html += "</ul>\n"
-                in_list = False
+            if list_tag:
+                html += f"</{list_tag}>\n"
+                list_tag = ""
             code_lang = line.strip()[3:].strip()
             in_code = True
             code_buffer = []
@@ -231,9 +511,9 @@ def md_to_html(md_text, file_id, file_path):
         # Tables
         if "|" in line and line.strip().startswith("|"):
             if not in_table:
-                if in_list:
-                    html += "</ul>\n"
-                    in_list = False
+                if list_tag:
+                    html += f"</{list_tag}>\n"
+                    list_tag = ""
                 in_table = True
                 table_buffer = []
             table_buffer.append(line)
@@ -248,9 +528,9 @@ def md_to_html(md_text, file_id, file_path):
         # Headers
         header_match = re.match(r"^(#{1,6})\s+(.+)$", line)
         if header_match:
-            if in_list:
-                html += "</ul>\n"
-                in_list = False
+            if list_tag:
+                html += f"</{list_tag}>\n"
+                list_tag = ""
             level = len(header_match.group(1))
             text = inline_format(header_match.group(2))
             anchor = re.sub(r"[^a-z0-9]+", "-", text.lower().strip())
@@ -261,18 +541,21 @@ def md_to_html(md_text, file_id, file_path):
 
         # Horizontal rule
         if re.match(r"^---+\s*$", line):
-            if in_list:
-                html += "</ul>\n"
-                in_list = False
+            if list_tag:
+                html += f"</{list_tag}>\n"
+                list_tag = ""
             html += "<hr>\n"
             i += 1
             continue
 
         # List items
         if re.match(r"^\s*[-*]\s+", line):
-            if not in_list:
+            if list_tag == "ol":
+                html += "</ol>\n"
+                list_tag = ""
+            if not list_tag:
                 html += "<ul>\n"
-                in_list = True
+                list_tag = "ul"
             content = re.sub(r"^\s*[-*]\s+", "", line)
             # Handle checkbox
             content = content.replace("[ ]", "&#9744;").replace("[x]", "&#9745;")
@@ -282,24 +565,29 @@ def md_to_html(md_text, file_id, file_path):
 
         # Numbered list
         if re.match(r"^\s*\d+[.)]\s+", line):
-            if not in_list:
+            if list_tag == "ul":
+                html += "</ul>\n"
+                list_tag = ""
+            if not list_tag:
                 html += "<ol>\n"
-                in_list = True
+                list_tag = "ol"
             content = re.sub(r"^\s*\d+[.)]\s+", "", line)
             html += f"  <li>{inline_format(content)}</li>\n"
             i += 1
             continue
 
         # Close list if we hit non-list content
-        if in_list and line.strip():
-            if html.rstrip().endswith("</ol>") or "<ol>" in html[-200:]:
-                html += "</ol>\n"
-            else:
-                html += "</ul>\n"
-            in_list = False
+        if list_tag and line.strip():
+            html += f"</{list_tag}>\n"
+            list_tag = ""
 
         # Empty lines
         if not line.strip():
+            i += 1
+            continue
+
+        # Remove legacy inline next-topic hints to avoid duplicated navigation UI
+        if re.match(r"^\s*siguiente:\s+", line, flags=re.IGNORECASE):
             i += 1
             continue
 
@@ -307,11 +595,13 @@ def md_to_html(md_text, file_id, file_path):
         html += f"<p>{inline_format(line)}</p>\n"
         i += 1
 
-    if in_list:
-        html += "</ul>\n"
+    if list_tag:
+        html += f"</{list_tag}>\n"
     if in_table:
         html += render_table(table_buffer)
 
+    html = enhance_semantic_arrow_lists(html)
+    html = enhance_arrow_code_list_items(html)
     return html
 
 
@@ -349,13 +639,28 @@ def inline_format(text):
     # Links
     text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r'<a href="\2">\1</a>', text)
     # Images
-    text = re.sub(r"!\[([^\]]*)\]\(([^)]+)\)", r'<img alt="\1" src="\2">', text)
+    text = re.sub(
+        r"!\[([^\]]*)\]\(([^)]+)\)",
+        r'<img alt="\1" src="\2" loading="lazy" decoding="async">',
+        text,
+    )
     return text
 
 
 def build_nav(files_content):
     """Construye la barra de navegacion con anchors."""
-    nav = '<nav id="sidebar">\n<h2>Indice</h2>\n<ul>\n'
+    nav = (
+        '<nav id="sidebar">\n'
+        '<div class="sidebar-top">\n'
+        '<h2>Indice</h2>\n'
+        '<div class="sidebar-search-wrap">\n'
+        '  <input id="sidebar-search" type="search" placeholder="Buscar leccion..." '
+        'aria-label="Buscar leccion en el curso" autocomplete="off">\n'
+        '  <div id="sidebar-search-count" aria-live="polite"></div>\n'
+        '</div>\n'
+        '</div>\n'
+        '<ul>\n'
+    )
 
     sections = {
         "00-informe": "Informe fundacional",
@@ -440,10 +745,13 @@ def build_html():
 <link rel="stylesheet" href="assets/study-ux.css?v=__ASSET_VERSION__">
 <link rel="stylesheet" href="assets/course-switcher.css?v=__ASSET_VERSION__">
 <link rel="stylesheet" href="assets/assistant-panel.css?v=__ASSET_VERSION__">
+<script>window.__SMA_ASSISTANT_PANEL_SRC = "assets/assistant-panel.js?v=__ASSET_VERSION__";</script>
+<script>window.__SMA_MERMAID_SRC = "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js";</script>
+<script>window.__SMA_HLJS_CORE_SRC = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js";</script>
+<script>window.__SMA_HLJS_LANG_SRC = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js";</script>
 <script defer src="assets/study-ux.js?v=__ASSET_VERSION__"></script>
 <script defer src="assets/course-switcher.js?v=__ASSET_VERSION__"></script>
 <script defer src="assets/theme-controls.js?v=__ASSET_VERSION__"></script>
-<script defer src="assets/assistant-panel.js?v=__ASSET_VERSION__"></script>
 <script defer src="assets/assistant-bridge.js?v=__ASSET_VERSION__"></script>
 
 <!-- Google Fonts - Inter -->
@@ -452,12 +760,7 @@ def build_html():
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&display=swap" rel="stylesheet">
 
 <!-- Mermaid.js para diagramas -->
-<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-
-<!-- Highlight.js para syntax highlighting -->
 <link id="hljs-theme" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/monokai.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
 
 <style>
 /* ============================================
@@ -724,7 +1027,7 @@ body {{
     overflow-y: auto;
     background: var(--sidebar-bg);
     border-right: 1px solid var(--border);
-    padding: var(--space-lg) var(--space-md);
+    padding: calc(var(--space-lg) + 8px) var(--space-md) var(--space-lg);
     font-size: 0.875rem;
     z-index: 100;
     scrollbar-width: thin;
@@ -739,14 +1042,57 @@ body {{
     border-radius: 3px;
 }}
 
+#sidebar .sidebar-top {{
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--sidebar-bg);
+    padding-top: var(--space-xs);
+}}
+
 #sidebar h2 {{
     font-size: 1rem;
     font-weight: 700;
-    margin-bottom: var(--space-md);
+    margin-bottom: var(--space-sm);
     color: var(--accent);
     letter-spacing: -0.02em;
     text-transform: uppercase;
     font-size: 0.75rem;
+    line-height: 1.25;
+}}
+
+#sidebar .sidebar-search-wrap {{
+    margin-bottom: var(--space-sm);
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+}}
+
+#sidebar #sidebar-search {{
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-surface);
+    color: var(--text);
+    padding: 8px 10px;
+    font-size: 0.82rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}}
+
+#sidebar #sidebar-search::placeholder {{
+    color: var(--text-muted);
+}}
+
+#sidebar #sidebar-search:focus {{
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+}}
+
+#sidebar #sidebar-search-count {{
+    margin-top: 6px;
+    min-height: 1em;
+    font-size: 0.72rem;
+    color: var(--text-muted);
 }}
 
 #sidebar ul {{ list-style: none; padding-left: 0; }}
@@ -798,6 +1144,29 @@ body {{
     padding: var(--space-3xl) var(--space-2xl);
     width: calc(100% - var(--sidebar-width));
     min-height: 100vh;
+}}
+
+section.lesson {{
+    overflow-x: hidden;
+    max-width: 100%;
+    box-sizing: border-box;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    content-visibility: auto;
+    contain-intrinsic-size: 1200px;
+}}
+
+body:not(.sma-hydrated) section.lesson {{
+    display: none;
+}}
+
+body:not(.sma-hydrated) section.lesson:first-of-type {{
+    display: block;
+}}
+
+section.lesson > * {{
+    max-width: 100%;
+    box-sizing: border-box;
 }}
 
 /* ============================================
@@ -975,10 +1344,10 @@ p code, li code, td code {{
     --mermaid-node-border: #1d4ed8;
     --mermaid-line: #1e40af;
     --mermaid-label-bg: #eef2ff;
-    --mermaid-legend-direct: #d946ef;
-    --mermaid-legend-dashed-closed: #64748b;
-    --mermaid-legend-dashed-open: #2563eb;
-    --mermaid-legend-solid-open: #059669;
+    --mermaid-legend-direct: #cbd5e1;
+    --mermaid-legend-dashed-closed: #cbd5e1;
+    --mermaid-legend-contract: #cbd5e1;
+    --mermaid-legend-solid-open: #cbd5e1;
 }}
 
 .sma-mermaid-block {{
@@ -1016,51 +1385,153 @@ p code, li code, td code {{
     color: var(--text);
 }}
 
-.sma-arrow {{
-    position: relative;
-    width: 34px;
-    height: 0;
-    border-top: 2px solid currentColor;
-    flex: 0 0 34px;
+.sma-legend-arrow {{
+    width: 40px;
+    height: 12px;
+    flex: 0 0 40px;
+    overflow: visible;
 }}
 
-.sma-arrow::after {{
-    content: '';
-    position: absolute;
-    right: -1px;
-    top: -5px;
-    border-left: 8px solid currentColor;
-    border-top: 5px solid transparent;
-    border-bottom: 5px solid transparent;
+.sma-legend-arrow line,
+.sma-legend-arrow polygon,
+.sma-legend-arrow polyline {{
+    stroke: currentColor;
+    fill: currentColor;
+    stroke-width: 2.3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }}
 
-.sma-arrow.direct-closed {{ color: var(--mermaid-legend-direct); }}
-
-.sma-arrow.dashed-closed {{
-    color: var(--mermaid-legend-dashed-closed);
-    border-top-style: dashed;
+.sma-legend-arrow polyline {{
+    fill: none;
 }}
 
-.sma-arrow.dashed-open {{
-    color: var(--mermaid-legend-dashed-open);
-    border-top-style: dashed;
+.sma-legend-arrow.dashed-closed line,
+.sma-legend-arrow.contract-open line {{
+    stroke-dasharray: 6 4;
 }}
 
-.sma-arrow.dashed-open::after,
-.sma-arrow.solid-open::after {{
-    border-left-color: transparent;
-    border: 2px solid currentColor;
-    width: 8px;
-    height: 8px;
-    border-left: 0;
-    border-bottom: 0;
-    transform: rotate(45deg);
-    right: -2px;
-    top: -4px;
-    background: transparent;
+.sma-legend-arrow.direct-closed {{ color: var(--mermaid-legend-direct); }}
+.sma-legend-arrow.dashed-closed {{ color: var(--mermaid-legend-dashed-closed); }}
+.sma-legend-arrow.contract-open {{ color: var(--mermaid-legend-contract); }}
+.sma-legend-arrow.solid-open {{ color: var(--mermaid-legend-solid-open); }}
+
+.sma-semantic-arrow-item .sma-semantic-arrow-icon {{
+    width: 42px;
+    height: 12px;
+    margin-right: 8px;
+    vertical-align: middle;
 }}
 
-.sma-arrow.solid-open {{ color: var(--mermaid-legend-solid-open); }}
+.sma-semantic-arrow-item > span {{
+    vertical-align: middle;
+}}
+
+.sma-architecture-block {{
+    margin-top: var(--space-md);
+}}
+
+.sma-architecture-svg-wrap {{
+    border: 1px solid rgba(148, 163, 184, 0.4);
+    border-radius: 16px;
+    background: radial-gradient(circle at 20% 10%, rgba(59, 130, 246, 0.16), transparent 42%), #0b1220;
+    box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.25), 0 8px 28px rgba(15, 23, 42, 0.32);
+    padding: 12px;
+    overflow-x: auto;
+}}
+
+.sma-architecture-svg {{
+    display: block;
+    width: 100%;
+    min-width: 960px;
+    height: auto;
+}}
+
+.sma-arch-board {{
+    fill: rgba(15, 23, 42, 0.92);
+    stroke: rgba(148, 163, 184, 0.32);
+    stroke-width: 1.5;
+}}
+
+.sma-arch-layer {{
+    stroke-width: 2;
+}}
+
+.sma-arch-layer-ui {{
+    fill: rgba(29, 78, 216, 0.14);
+    stroke: #7dd3fc;
+}}
+
+.sma-arch-layer-core {{
+    fill: rgba(14, 116, 144, 0.12);
+    stroke: #67e8f9;
+}}
+
+.sma-arch-layer-app {{
+    fill: rgba(124, 58, 237, 0.1);
+    stroke: #f97316;
+}}
+
+.sma-arch-layer-infra {{
+    fill: rgba(168, 85, 247, 0.11);
+    stroke: #d8b4fe;
+}}
+
+.sma-arch-layer-label {{
+    font-family: var(--font-display);
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    fill: #e2e8f0;
+}}
+
+.sma-arch-node {{
+    stroke-width: 1.6;
+    fill: rgba(15, 23, 42, 0.72);
+}}
+
+.sma-arch-node-ui {{ stroke: #93c5fd; }}
+.sma-arch-node-core {{ stroke: #67e8f9; }}
+.sma-arch-node-app {{ stroke: #fb923c; }}
+.sma-arch-node-infra {{ stroke: #d8b4fe; }}
+
+.sma-arch-node-label {{
+    font-family: var(--font-body);
+    font-size: 17px;
+    font-weight: 600;
+    fill: #f8fafc;
+}}
+
+.sma-arch-edge {{
+    fill: none;
+    stroke-width: 3;
+    stroke-linecap: round;
+}}
+
+.sma-arch-edge-direct {{ stroke: #f472b6; }}
+
+.sma-arch-edge-wiring {{
+    stroke: #94a3b8;
+    stroke-dasharray: 8 6;
+}}
+
+.sma-arch-edge-contract {{
+    stroke: #60a5fa;
+    stroke-dasharray: 8 5;
+}}
+
+.sma-arch-edge-open {{ stroke: #86efac; }}
+
+.sma-arch-head-direct {{ fill: #f472b6; stroke: #f472b6; }}
+.sma-arch-head-wiring {{ fill: #94a3b8; stroke: #94a3b8; }}
+.sma-arch-head-contract {{ fill: #60a5fa; stroke: #60a5fa; }}
+.sma-arch-head-open {{
+    fill: none;
+    stroke: #86efac;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}}
 
 pre.mermaid {{
     background: var(--mermaid-bg);
@@ -1257,7 +1728,31 @@ blockquote p {{
 
 @media (max-width: 768px) {{
     :root {{ --sidebar-width: 0; }}
-    #sidebar {{ display: none; }}
+    #sidebar {{
+        display: block;
+        width: min(86vw, 320px);
+        max-width: 320px;
+        transform: translateX(-105%);
+        transition: transform 0.22s ease;
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+        z-index: 400;
+    }}
+    body.sidebar-open #sidebar {{
+        transform: translateX(0);
+    }}
+    #sidebar-backdrop {{
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(2, 8, 23, 0.52);
+        z-index: 360;
+    }}
+    body.sidebar-open #sidebar-backdrop {{
+        display: block;
+    }}
+    body.sidebar-open {{
+        overflow: hidden;
+    }}
     #content {{ 
         margin-left: 0; 
         padding: 20px 16px;
@@ -1382,13 +1877,14 @@ blockquote p {{
 
 @media (max-width: 600px) {{
     #theme-controls {{
-        flex-direction: column;
-        align-items: flex-end;
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: nowrap;
         gap: 6px;
     }}
     
     #theme-controls button {{
-        width: 120px;
+        width: auto;
         padding: 6px 10px;
         font-size: 0.7rem;
     }}
@@ -1405,11 +1901,16 @@ blockquote p {{
     background-color: var(--bg-elevated);
     color: var(--text);
 }}
+
+#sidebar-backdrop {{
+    display: none;
+}}
+
 #menu-toggle {{
     display: none;
     position: fixed;
-    top: 12px;
-    left: 12px;
+    top: 10px;
+    left: 10px;
     background: var(--sidebar-bg);
     color: var(--text);
     border: 1px solid var(--border);
@@ -1417,7 +1918,7 @@ blockquote p {{
     padding: 8px 12px;
     font-size: 1.1rem;
     cursor: pointer;
-    z-index: 250;
+    z-index: 13050;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }}
 
@@ -1429,6 +1930,7 @@ blockquote p {{
 <body>
 
 <button id="menu-toggle" onclick="toggleSidebar()" title="Abrir menú">&#9776;</button>
+<div id="sidebar-backdrop" onclick="closeSidebar()" aria-hidden="true"></div>
 
 <div id="study-ux-controls" class="study-ux-controls" aria-label="Controles de estudio">
     <button id="study-completion-toggle" type="button">✅ Marcar completado</button>
@@ -1525,11 +2027,75 @@ function applyCodeTheme(theme) {{
     }};
     hljsLink.href = `https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/${{themeMap[theme] || 'monokai.min.css'}}`;
     
-    // Re-highlight all code blocks
-    document.querySelectorAll('pre code').forEach(block => {{
-        hljs.highlightElement(block);
+    const highlightedBlocks = document.querySelectorAll('pre code[data-highlighted]');
+    if (typeof hljs !== 'undefined') {{
+        highlightedBlocks.forEach(block => {{
+            block.removeAttribute('data-highlighted');
+            hljs.highlightElement(block);
+        }});
+    }}
+    enhanceCodeBlocksFrom(highlightedBlocks);
+}}
+
+let mermaidLoadPromise = null;
+let highlightLoadPromise = null;
+
+function loadExternalScript(src) {{
+    return new Promise((resolve, reject) => {{
+        if (!src) {{
+            reject(new Error('missing-script-src'));
+            return;
+        }}
+
+        const selector = `script[data-sma-src="${{src}}"]`;
+        const existing = document.querySelector(selector);
+        if (existing) {{
+            if (existing.dataset.loaded === '1') {{
+                resolve();
+                return;
+            }}
+            existing.addEventListener('load', () => resolve(), {{ once: true }});
+            existing.addEventListener('error', () => reject(new Error(`script-load-failed:${{src}}`)), {{ once: true }});
+            return;
+        }}
+
+        const script = document.createElement('script');
+        script.src = src;
+        script.async = true;
+        script.dataset.smaSrc = src;
+        script.addEventListener('load', () => {{
+            script.dataset.loaded = '1';
+            resolve();
+        }}, {{ once: true }});
+        script.addEventListener('error', () => reject(new Error(`script-load-failed:${{src}}`)), {{ once: true }});
+        document.head.appendChild(script);
     }});
-    enhanceCodeBlocks();
+}}
+
+function ensureMermaidLoaded() {{
+    if (typeof mermaid !== 'undefined') return Promise.resolve();
+    if (!mermaidLoadPromise) {{
+        mermaidLoadPromise = loadExternalScript(window.__SMA_MERMAID_SRC).then(() => {{
+            if (typeof mermaid === 'undefined') {{
+                throw new Error('mermaid-unavailable');
+            }}
+        }});
+    }}
+    return mermaidLoadPromise;
+}}
+
+function ensureHighlightLoaded() {{
+    if (typeof hljs !== 'undefined') return Promise.resolve();
+    if (!highlightLoadPromise) {{
+        highlightLoadPromise = loadExternalScript(window.__SMA_HLJS_CORE_SRC)
+            .then(() => loadExternalScript(window.__SMA_HLJS_LANG_SRC))
+            .then(() => {{
+                if (typeof hljs === 'undefined') {{
+                    throw new Error('hljs-unavailable');
+                }}
+            }});
+    }}
+    return highlightLoadPromise;
 }}
 
 function detectSnippetLang(codeEl) {{
@@ -1593,7 +2159,11 @@ function copyCodeToClipboard(text) {{
 }}
 
 function enhanceCodeBlocks() {{
-    document.querySelectorAll('pre code').forEach(code => {{
+    enhanceCodeBlocksFrom(document.querySelectorAll('pre code'));
+}}
+
+function enhanceCodeBlocksFrom(codes) {{
+    Array.from(codes || []).forEach(code => {{
         const pre = code.closest('pre');
         if (!pre || pre.classList.contains('mermaid')) return;
         if (pre.dataset.codeEnhanced === '1') return;
@@ -1631,6 +2201,51 @@ function enhanceCodeBlocks() {{
     }});
 }}
 
+function highlightCodeBlock(block) {{
+    if (!block || block.dataset.highlighted === '1') return;
+    if (typeof hljs === 'undefined') {{
+        enhanceCodeBlocksFrom([block]);
+        return;
+    }}
+    hljs.highlightElement(block);
+    block.dataset.highlighted = '1';
+    enhanceCodeBlocksFrom([block]);
+}}
+
+async function initCodeHighlighting() {{
+    const blocks = Array.from(document.querySelectorAll('pre code'));
+    if (!blocks.length) return;
+
+    try {{
+        await ensureHighlightLoaded();
+    }} catch (error) {{
+        console.warn('Highlight.js no cargado.', error);
+        enhanceCodeBlocksFrom(blocks);
+        return;
+    }}
+
+    const warmup = blocks.slice(0, 16);
+    warmup.forEach(highlightCodeBlock);
+
+    if (!('IntersectionObserver' in window)) {{
+        blocks.forEach(highlightCodeBlock);
+        return;
+    }}
+
+    const codeObserver = new IntersectionObserver((entries, observerRef) => {{
+        entries.forEach(entry => {{
+            if (!entry.isIntersecting) return;
+            highlightCodeBlock(entry.target);
+            observerRef.unobserve(entry.target);
+        }});
+    }}, {{ rootMargin: '360px 0px' }});
+
+    blocks.forEach(block => {{
+        if (block.dataset.highlighted === '1') return;
+        codeObserver.observe(block);
+    }});
+}}
+
 function cycleCodeTheme() {{
     const themes = ['monokai', 'github', 'github-dark', 'atom-one-dark'];
     const current = localStorage.getItem('course-code-theme') || 'monokai';
@@ -1665,13 +2280,18 @@ function currentMermaidTheme() {{
     return theme === 'dark' ? 'dark' : 'default';
 }}
 
-function renderMermaid() {{
-    if (typeof mermaid === 'undefined') {{
-        console.warn('Mermaid no cargado. Revisa conexión a internet/CDN.');
+async function renderMermaid() {{
+    try {{
+        await ensureMermaidLoaded();
+    }} catch (error) {{
+        console.warn('Mermaid no cargado. Revisa conexión a internet/CDN.', error);
         return;
     }}
 
-    document.querySelectorAll('pre.mermaid').forEach(function(el) {{
+    const blocks = Array.from(document.querySelectorAll('pre.mermaid'));
+    if (!blocks.length) return;
+
+    blocks.forEach(function(el) {{
         if (!el.dataset.originalMermaid) {{
             el.dataset.originalMermaid = (el.textContent || '').trimEnd();
         }}
@@ -1679,6 +2299,7 @@ function renderMermaid() {{
             el.innerHTML = '';
             el.textContent = el.dataset.originalMermaid;
         }}
+        el.dataset.mermaidRendered = '0';
         el.removeAttribute('data-processed');
     }});
 
@@ -1688,17 +2309,47 @@ function renderMermaid() {{
         securityLevel: 'loose'
     }});
 
-    mermaid.run({{ querySelector: 'pre.mermaid' }});
+    function renderNode(el) {{
+        if (!el || el.dataset.mermaidRendered === '1') return;
+        mermaid.run({{ nodes: [el] }})
+            .then(function() {{
+                el.dataset.mermaidRendered = '1';
+            }})
+            .catch(function() {{}});
+    }}
+
+    blocks.slice(0, 3).forEach(renderNode);
+
+    if (!('IntersectionObserver' in window)) {{
+        blocks.forEach(renderNode);
+        return;
+    }}
+
+    const mermaidObserver = new IntersectionObserver((entries, observerRef) => {{
+        entries.forEach(entry => {{
+            if (!entry.isIntersecting) return;
+            renderNode(entry.target);
+            observerRef.unobserve(entry.target);
+        }});
+    }}, {{ rootMargin: '420px 0px' }});
+
+    blocks.forEach(el => {{
+        if (el.dataset.mermaidRendered === '1') return;
+        mermaidObserver.observe(el);
+    }});
 }}
 
-// Init Mermaid
-renderMermaid();
+function bootCourseRenderers() {{
+    renderMermaid();
+    initCodeHighlighting();
+    document.body.classList.add('sma-hydrated');
+}}
 
-// Init Highlight.js
-document.querySelectorAll('pre code').forEach(block => {{
-    hljs.highlightElement(block);
-}});
-enhanceCodeBlocks();
+if (document.readyState === 'loading') {{
+    document.addEventListener('DOMContentLoaded', bootCourseRenderers, {{ once: true }});
+}} else {{
+    bootCourseRenderers();
+}}
 
 // Back to top button
 window.addEventListener('scroll', () => {{
@@ -1724,19 +2375,92 @@ sections.forEach(s => observer.observe(s));
 
 // Mobile sidebar toggle
 function toggleSidebar() {{
-    const sidebar = document.getElementById('sidebar');
-    const current = sidebar.style.display;
-    sidebar.style.display = current === 'block' ? 'none' : 'block';
+    if (window.innerWidth > 768) return;
+    document.body.classList.toggle('sidebar-open');
+}}
+
+function closeSidebar() {{
+    document.body.classList.remove('sidebar-open');
 }}
 
 // Close sidebar when clicking a link on mobile
 document.querySelectorAll('#sidebar a').forEach(link => {{
     link.addEventListener('click', () => {{
         if (window.innerWidth <= 768) {{
-            document.getElementById('sidebar').style.display = 'none';
+            closeSidebar();
         }}
     }});
 }});
+
+document.addEventListener('keydown', event => {{
+    if (event.key === 'Escape') closeSidebar();
+}});
+
+window.addEventListener('resize', () => {{
+    if (window.innerWidth > 768) closeSidebar();
+}});
+
+// Sidebar search/filter
+const sidebarSearchInput = document.getElementById('sidebar-search');
+const sidebarSearchCount = document.getElementById('sidebar-search-count');
+
+function normalizeSearchText(value) {{
+    return (value || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+}}
+
+function applySidebarSearch() {{
+    if (!sidebarSearchInput) return;
+    const query = normalizeSearchText(sidebarSearchInput.value.trim());
+    const sections = document.querySelectorAll('#sidebar li.nav-section');
+    let visibleLessons = 0;
+
+    sections.forEach(section => {{
+        const sectionTitle = section.querySelector(':scope > strong');
+        const sectionLabel = normalizeSearchText(sectionTitle ? sectionTitle.textContent : '');
+        const links = section.querySelectorAll('a.doc-nav-link');
+        let sectionHasVisible = false;
+
+        links.forEach(link => {{
+            const item = link.closest('li');
+            if (!item) return;
+            const lessonPath = normalizeSearchText(link.dataset.lessonPath || '');
+            const lessonTitle = normalizeSearchText(link.textContent || '');
+            const match = !query || lessonTitle.includes(query) || lessonPath.includes(query) || sectionLabel.includes(query);
+            item.style.display = match ? '' : 'none';
+            if (match) {{
+                sectionHasVisible = true;
+                visibleLessons += 1;
+            }}
+        }});
+
+        section.style.display = sectionHasVisible ? '' : 'none';
+    }});
+
+    if (sidebarSearchCount) {{
+        if (!query) {{
+            sidebarSearchCount.textContent = '';
+        }} else if (visibleLessons === 1) {{
+            sidebarSearchCount.textContent = '1 resultado';
+        }} else {{
+            sidebarSearchCount.textContent = `${{visibleLessons}} resultados`;
+        }}
+    }}
+}}
+
+if (sidebarSearchInput) {{
+    sidebarSearchInput.addEventListener('input', applySidebarSearch);
+    sidebarSearchInput.addEventListener('keydown', event => {{
+        if (event.key === 'Escape') {{
+            sidebarSearchInput.value = '';
+            applySidebarSearch();
+            sidebarSearchInput.blur();
+        }}
+    }});
+    applySidebarSearch();
+}}
 </script>
 
 </body>

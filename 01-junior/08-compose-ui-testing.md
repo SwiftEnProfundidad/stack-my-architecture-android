@@ -288,3 +288,39 @@ Después, cambia los textos visibles de la UI y confirma que tus pruebas crític
 
 Si consigues eso, ya no estás “mirando pantallas a ojo”. Estás construyendo calidad verificable.
 
+<!-- semantica-flechas:auto -->
+## Semantica de flechas aplicada a esta arquitectura
+
+```mermaid
+flowchart LR
+    subgraph APP["App module"]
+        APPROOT["AppRoot + Hilt"]
+        DI["Dependency graph"]
+    end
+
+    subgraph FEATURE["Feature module"]
+        UI["FeatureScreen"]
+        VM["FeatureViewModel"]
+        PORT["FeaturePort (interface)"]
+    end
+
+    subgraph DATA["Data/Infra module"]
+        IMPL["FeatureAdapterImpl"]
+        LOCAL["LocalDataSource"]
+    end
+
+    APPROOT -.-> DI
+    DI -.-> IMPL
+    UI --> VM
+    VM ==> PORT
+    IMPL --o PORT
+    IMPL --> LOCAL
+```text
+
+Lectura semantica minima de este diagrama:
+
+1. `-->` dependencia directa en runtime.
+2. `-.->` wiring y configuracion de ensamblado.
+3. `==>` dependencia contra contrato/abstraccion.
+4. `--o` salida/propagacion desde implementacion concreta.
+
