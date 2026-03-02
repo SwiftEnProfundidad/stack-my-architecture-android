@@ -4,6 +4,39 @@ Este archivo existe para mantener compatibilidad con el plan de implementación 
 
 El contenido oficial del proyecto final está en [`00-brief-ruralgo-fieldops.md`](00-brief-ruralgo-fieldops.md). Ese documento define el alcance funcional, técnico y operativo de RuralGO FieldOps como producto vivo transversal del curso.
 
+## Qué valida esta etapa de forma explícita
+
+Esta etapa no valida solo desarrollo de features. Valida capacidad de entrega profesional extremo a extremo:
+
+1. Diseño técnico con límites claros y trade-offs explícitos.
+2. Implementación con calidad y cobertura suficiente en caminos críticos.
+3. Operación realista (observabilidad, incident response y release controlado).
+4. Defensa técnica basada en evidencia, no en opinión.
+
+## Criterio de cierre enterprise
+
+Para considerar el proyecto final cerrado se exige:
+
+1. Alcance funcional obligatorio implementado.
+2. Rúbrica final aprobada sin bloqueadores críticos.
+3. Evidencias obligatorias completas y verificables por tercero.
+4. Narrativa de defensa técnica coherente con lo implementado.
+
+## Referencias obligatorias de esta etapa
+
+1. Brief integral del reto:
+- [`00-brief-ruralgo-fieldops.md`](00-brief-ruralgo-fieldops.md)
+
+2. Rúbrica de empleabilidad:
+- [`01-rubrica-empleabilidad.md`](01-rubrica-empleabilidad.md)
+
+3. Evidencias obligatorias:
+- [`02-evidencias-obligatorias.md`](02-evidencias-obligatorias.md)
+
+4. Operación y gobernanza:
+- [`03-operacion-senior.md`](03-operacion-senior.md)
+- [`04-gobernanza-maestria.md`](04-gobernanza-maestria.md)
+
 <!-- auto-gapfix:layered-mermaid -->
 ## Diagrama de arquitectura por capas
 
@@ -36,7 +69,7 @@ flowchart LR
 
   VM --> UC
   UC --> ENT
-  UC ==> PORT
+  UC -.o PORT
   BOOT -.-> PORT
   BOOT -.-> API
   BOOT -.-> STORE
@@ -63,5 +96,5 @@ flowchart LR
 La lectura del diagrama sigue esta semantica:
 1. `-->` dependencia directa en runtime.
 2. `-.->` wiring o configuracion.
-3. `==>` contrato o abstraccion.
+3. `-.o` dependencia contra contrato/abstraccion.
 4. `--o` salida o propagacion de resultado.
