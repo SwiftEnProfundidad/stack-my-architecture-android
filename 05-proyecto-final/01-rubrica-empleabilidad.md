@@ -20,6 +20,41 @@ La sexta dimensión es trabajo profesional. Se evalúa cómo se documentan decis
 
 La séptima dimensión es publicación y cierre de producto. Se verifica que el producto no quede en modo “demo eterna” y que exista un cierre real de release.
 
+## Pesos y umbrales de decisión
+
+| Dimensión | Peso |
+|---|---:|
+| Implementación y claridad técnica | 15 |
+| Arquitectura y mantenibilidad | 20 |
+| Testing y confiabilidad | 20 |
+| Operación y release | 15 |
+| Rendimiento móvil | 10 |
+| Trabajo profesional y defensa técnica | 10 |
+| Publicación y cierre de producto | 10 |
+
+Umbrales:
+
+1. `>= 70/100`: aprobado hireable.
+2. `>= 85/100`: señal architect-ready.
+3. En ambos casos: sin bloqueadores críticos.
+
+## Bloqueadores críticos (No apto)
+
+1. Sin evidencia de tests en flujos críticos.
+2. Sin estrategia de release/rollback ejecutable.
+3. Sin evidencia operativa mínima (logs/alertas/runbook).
+4. Sin trazabilidad de decisiones técnicas (ADRs/justificación de trade-offs).
+5. Sin paquete de publicación defendible.
+
+## Expectativas enterprise de defensa
+
+Se espera que puedas explicar en 5 minutos:
+
+1. Qué riesgo principal resolviste y por qué era prioritario.
+2. Qué trade-off aceptaste y cómo lo validaste.
+3. Qué harías ante un incidente real en las primeras 2 horas.
+4. Qué deuda técnica dejas, por qué la aceptas y cómo la gobernarías.
+
 ```kotlin
 package com.stackmyarchitecture.finalproject.evaluation
 
@@ -90,7 +125,7 @@ flowchart LR
 
   VM --> UC
   UC --> ENT
-  UC ==> PORT
+  UC -.o PORT
   BOOT -.-> PORT
   BOOT -.-> API
   BOOT -.-> STORE
@@ -117,5 +152,5 @@ flowchart LR
 La lectura del diagrama sigue esta semantica:
 1. `-->` dependencia directa en runtime.
 2. `-.->` wiring o configuracion.
-3. `==>` contrato o abstraccion.
+3. `-.o` dependencia contra contrato/abstraccion.
 4. `--o` salida o propagacion de resultado.

@@ -444,7 +444,6 @@ Finalmente, escribe test unitario del repositorio para validar que un error HTTP
 
 Si completas ese recorrido sin saltarte capas, ya tienes una base Midlevel real para evolucionar hacia estrategias offline-first más avanzadas en los siguientes módulos.
 
-<!-- semantica-flechas:auto -->
 ## Semantica de flechas aplicada a esta arquitectura
 
 ```mermaid
@@ -471,7 +470,7 @@ flowchart LR
     VM -.o PORT
     IMPL --o PORT
     IMPL --> LOCAL
-```text
+```
 
 Lectura semantica minima de este diagrama:
 

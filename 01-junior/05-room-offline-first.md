@@ -359,7 +359,6 @@ Después explica en 5 líneas por qué ese cambio se reflejó sin recargar manua
 
 Si puedes responder eso, entendiste el corazón de Room offline-first.
 
-<!-- semantica-flechas:auto -->
 ## Semantica de flechas aplicada a esta arquitectura
 
 ```mermaid
@@ -386,7 +385,7 @@ flowchart LR
     VM -.o PORT
     IMPL --o PORT
     IMPL --> LOCAL
-```text
+```
 
 Lectura semantica minima de este diagrama:
 

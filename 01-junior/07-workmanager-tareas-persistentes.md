@@ -341,7 +341,6 @@ Luego explica qué diferencia de responsabilidad existe entre ese one-time y el 
 
 Si puedes explicarlo con claridad, entendiste WorkManager con criterio y no por copia.
 
-<!-- semantica-flechas:auto -->
 ## Semantica de flechas aplicada a esta arquitectura
 
 ```mermaid
@@ -368,7 +367,7 @@ flowchart LR
     VM -.o PORT
     IMPL --o PORT
     IMPL --> LOCAL
-```text
+```
 
 Lectura semantica minima de este diagrama:
 

@@ -81,7 +81,7 @@ flowchart LR
     ORCH --o SYNC_PORT
     ORCH --> API
     ORCH --> WM
-```text
+```
 
 Cómo leerlo correctamente:
 
