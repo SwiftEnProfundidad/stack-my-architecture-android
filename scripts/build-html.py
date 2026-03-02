@@ -138,7 +138,7 @@ MERMAID_ARROW_LEGEND_KEYWORDS = (
 
 def mermaid_needs_arrow_legend(raw_code_content: str, file_path: str) -> bool:
     source = f"{file_path}\n{raw_code_content}".lower()
-    relation_tokens = ("-->", "-.->", "==>", "--o", "<|--", "--|>", "..|>", "..>", "o--", "*--")
+    relation_tokens = ("-->", "-.->", "-.o", "--o", "==>", "<|--", "--|>", "..|>", "..>", "o--", "*--")
     has_relations = any(token in raw_code_content for token in relation_tokens)
     if not has_relations:
         return False
@@ -155,7 +155,6 @@ def normalize_mermaid_source(raw_code_content: str) -> str:
     if is_flowchart:
         normalized = re.sub(r"\.\.\>\|", "-.->|", normalized)
         normalized = re.sub(r"\.\.\>", "-.->", normalized)
-        normalized = normalized.replace("-.o", "-.->")
     if is_state_diagram:
         normalized = re.sub(r"-\.\->", "-->", normalized)
     return normalized
@@ -229,7 +228,7 @@ def is_layered_architecture_mermaid(raw_code_content: str) -> bool:
         "subgraph infra",
         "vm --> uc",
         "uc --> ent",
-        "uc ==> port",
+        "uc -.o port",
         "boot -.->",
         "port --o",
     )
@@ -566,13 +565,14 @@ def build_nav(files_content):
 
     sections = {
         "00-informe": "Informe fundacional",
-        "00-nivel-cero": "Nivel Cero: Fundamentos",
-        "01-junior": "Nivel Junior",
-        "02-midlevel": "Nivel Midlevel",
-        "03-senior": "Nivel Senior",
-        "04-maestria": "Nivel Maestria",
-        "05-proyecto-final": "Proyecto Final",
-        "anexos": "Anexos",
+        "00-core-mobile": "ETAPA 0: CORE MOBILE",
+        "00-nivel-cero": "ETAPA 0: NIVEL CERO",
+        "01-junior": "ETAPA 1: JUNIOR",
+        "02-midlevel": "ETAPA 2: MIDLEVEL",
+        "03-senior": "ETAPA 3: SENIOR",
+        "04-maestria": "ETAPA 5: MAESTRIA",
+        "05-proyecto-final": "ETAPA 6: PROYECTO FINAL",
+        "anexos": "ANEXOS",
     }
 
     current_section = ""
