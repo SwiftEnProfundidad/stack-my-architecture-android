@@ -377,7 +377,6 @@ Por último crea empate exacto de timestamp y verifica que el estado pasa a `Con
 
 Si puedes ejecutar y explicar esos tres escenarios con evidencia, ya tienes una base Midlevel real de consistencia y resolución de conflictos.
 
-<!-- semantica-flechas:auto -->
 ## Semantica de flechas aplicada a esta arquitectura
 
 ```mermaid
@@ -404,7 +403,7 @@ flowchart LR
     VM -.o PORT
     IMPL --o PORT
     IMPL --> LOCAL
-```text
+```
 
 Lectura semantica minima de este diagrama:
 

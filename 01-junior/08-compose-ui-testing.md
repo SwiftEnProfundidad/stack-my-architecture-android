@@ -288,7 +288,6 @@ Después, cambia los textos visibles de la UI y confirma que tus pruebas crític
 
 Si consigues eso, ya no estás “mirando pantallas a ojo”. Estás construyendo calidad verificable.
 
-<!-- semantica-flechas:auto -->
 ## Semantica de flechas aplicada a esta arquitectura
 
 ```mermaid
@@ -315,7 +314,7 @@ flowchart LR
     VM -.o PORT
     IMPL --o PORT
     IMPL --> LOCAL
-```text
+```
 
 Lectura semantica minima de este diagrama:
 

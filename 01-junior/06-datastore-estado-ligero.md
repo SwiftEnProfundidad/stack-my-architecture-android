@@ -373,7 +373,6 @@ Finalmente, explica en 6 líneas por qué esta solución usa DataStore y no Room
 
 Si puedes responder sin dudar, entendiste DataStore con criterio arquitectónico.
 
-<!-- semantica-flechas:auto -->
 ## Semantica de flechas aplicada a esta arquitectura
 
 ```mermaid
@@ -400,7 +399,7 @@ flowchart LR
     VM -.o PORT
     IMPL --o PORT
     IMPL --> LOCAL
-```text
+```
 
 Lectura semantica minima de este diagrama:
 

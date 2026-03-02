@@ -329,7 +329,6 @@ Finalmente rompe voluntariamente una ruta para observar el error y vuelve a corr
 
 Cuando termines este reto, ya tendrás una base de navegación moderna que podrás usar en todo el curso sin deuda técnica innecesaria.
 
-<!-- semantica-flechas:auto -->
 ## Semantica de flechas aplicada a esta arquitectura
 
 ```mermaid
@@ -356,7 +355,7 @@ flowchart LR
     VM -.o PORT
     IMPL --o PORT
     IMPL --> LOCAL
-```text
+```
 
 Lectura semantica minima de este diagrama:
 

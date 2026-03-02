@@ -356,7 +356,6 @@ Si ese test queda sólido, dominas el ciclo completo: error, reintento y recuper
 
 Con eso, cierras Junior con una base profesional real: no solo implementas features, también demuestras con pruebas que se comportan como se espera.
 
-<!-- semantica-flechas:auto -->
 ## Semantica de flechas aplicada a esta arquitectura
 
 ```mermaid
@@ -383,7 +382,7 @@ flowchart LR
     VM -.o PORT
     IMPL --o PORT
     IMPL --> LOCAL
-```text
+```
 
 Lectura semantica minima de este diagrama:
 

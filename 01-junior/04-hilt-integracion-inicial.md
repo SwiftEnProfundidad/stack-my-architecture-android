@@ -93,7 +93,7 @@ flowchart LR
     IMPL --o PORT
     IMPL --> DAO
     IMPL --> API
-```text
+```
 
 Lectura semántica conexión por conexión:
 
