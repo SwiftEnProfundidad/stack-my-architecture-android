@@ -155,7 +155,10 @@ def normalize_mermaid_source(raw_code_content: str) -> str:
     if is_flowchart:
         normalized = re.sub(r"\.\.\>\|", "-.->|", normalized)
         normalized = re.sub(r"\.\.\>", "-.->", normalized)
+        # Mermaid 10.9.x does not parse '-.o/--o' reliably in flowcharts.
+        # Keep the 4-arrow semantic in SVG legends and map diagram syntax to valid arrows.
         normalized = normalized.replace("-.o", "-.->")
+        normalized = normalized.replace("--o", "-->")
     if is_state_diagram:
         normalized = re.sub(r"-\.\->", "-->", normalized)
     return normalized
@@ -229,11 +232,17 @@ def is_layered_architecture_mermaid(raw_code_content: str) -> bool:
         "subgraph infra",
         "vm --> uc",
         "uc --> ent",
-        "uc ==> port",
         "boot -.->",
-        "port --o",
     )
-    return all(token in normalized for token in required_tokens)
+    if not all(token in normalized for token in required_tokens):
+        return False
+    has_contract_edge = (
+        "uc ==> port" in normalized
+        or "uc -.-> port" in normalized
+        or "uc -.o port" in normalized
+    )
+    has_output_edge = "port -->" in normalized or "port --o" in normalized
+    return has_contract_edge and has_output_edge
 
 
 def render_mermaid_arrow_legend() -> str:
@@ -630,6 +639,36 @@ def inline_format(text):
     """Aplica formato inline: bold, italic, code, links."""
     # Inline code (before other formatting to avoid conflicts)
     text = re.sub(r"`([^`]+)`", lambda m: "<code>" + m.group(1).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") + "</code>", text)
+    # Inline architectural arrows: render as SVG chips to avoid ASCII ambiguity.
+    text = re.sub(
+        r"<code>(--&gt;|-.-&gt;|-.o|--o)</code>",
+        lambda m: (
+            '<span class="sma-inline-arrow-chip" role="img" aria-label="Flecha de arquitectura">'
+            + (
+                '<svg class="sma-legend-arrow direct-closed" viewBox="0 0 40 12" aria-hidden="true">'
+                '<line x1="2" y1="6" x2="30" y2="6"></line><polygon points="30,2 38,6 30,10"></polygon>'
+                "</svg>"
+                if m.group(1) == "--&gt;"
+                else (
+                    '<svg class="sma-legend-arrow dashed-closed" viewBox="0 0 40 12" aria-hidden="true">'
+                    '<line x1="2" y1="6" x2="30" y2="6"></line><polygon points="30,2 38,6 30,10"></polygon>'
+                    "</svg>"
+                    if m.group(1) == "-.-&gt;"
+                    else (
+                        '<svg class="sma-legend-arrow contract-open" viewBox="0 0 40 12" aria-hidden="true">'
+                        '<line x1="2" y1="6" x2="30" y2="6"></line><polyline points="30,2 38,6 30,10"></polyline>'
+                        "</svg>"
+                        if m.group(1) == "-.o"
+                        else '<svg class="sma-legend-arrow solid-open" viewBox="0 0 40 12" aria-hidden="true">'
+                             '<line x1="2" y1="6" x2="30" y2="6"></line><polyline points="30,2 38,6 30,10"></polyline>'
+                             "</svg>"
+                    )
+                )
+            )
+            + "</span>"
+        ),
+        text,
+    )
     # Bold + italic
     text = re.sub(r"\*\*\*(.+?)\*\*\*", r"<strong><em>\1</em></strong>", text)
     # Bold
@@ -1425,6 +1464,18 @@ p code, li code, td code {{
 
 .sma-semantic-arrow-item > span {{
     vertical-align: middle;
+}}
+
+.sma-inline-arrow-chip {{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 4px;
+    margin: 0 2px;
+    background: var(--bg-elevated);
 }}
 
 .sma-architecture-block {{
