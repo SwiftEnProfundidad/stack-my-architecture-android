@@ -7,7 +7,7 @@ Definir criterios de aprobado/rechazado por fase para asegurar progresion real.
 
 | Fase | Gate tecnico | Gate pedagogico | Gate de defensa |
 | --- | --- | --- | --- |
-| Core Mobile + Nivel Cero | Diagrama de capas y limites correcto | Explica semantica de flechas | Defiende una dependencia valida y una invalida |
+| Core Mobile + Nivel Cero | Diagrama de capas y limites correcto | Explica semántica de flechas | Defiende una dependencia valida y una invalida |
 | Junior | Flujo rojo-verde-refactor completo | Explica como aisla feature de framework | Defiende por que elegiste ese boundary |
 | Midlevel | Offline-first y sync en verde | Explica conflicto y resolucion | Defiende trade-off consistencia vs latencia |
 | Senior | Observabilidad y quality gates activos | Explica impacto de metricas | Defiende decision de hardening por riesgo |

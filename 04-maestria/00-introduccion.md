@@ -27,7 +27,7 @@ Este cambio de escala es sutil pero profundo. Ya no basta con que tu módulo est
 
 ## El riesgo principal de esta etapa
 
-Cuando un equipo empieza a escalar arquitectura, aparece un riesgo muy conocido: confundir sofisticación con madurez. Surgen capas, abstracciones y vocabulario avanzado, pero la entrega real se vuelve más lenta y la coordinación más frágil.
+Cuando un equipo empieza a escalar arquitectura, aparece un riesgo muy conocido: confundir sofisticación con madurez. Surgen capas, abstracciónes y vocabulario avanzado, pero la entrega real se vuelve más lenta y la coordinación más frágil.
 
 Eso no es Maestría. Eso es complejidad desordenada.
 
@@ -114,8 +114,36 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Mapear qué competencias de Maestría ya tienes consolidadas frente a las que necesitas desarrollar.
+
+**Pasos**:
+1. Crea una tabla con cuatro columnas: Competencia, ¿La tengo?, Evidencia concreta, Siguiente paso.
+2. Evalúa estas competencias de Maestría una a una: (a) evolución de contratos entre dominios, (b) diseño de bounded contexts con ownership claro, (c) migraciones transversales sin bloqueo, (d) gobernanza trimestral multi-equipo, (e) defensa técnica de decisiones con datos.
+3. En "¿La tengo?" responde: Sí / Parcialmente / No.
+4. En "Evidencia concreta" escribe un ejemplo real de tu proyecto o trabajo, o deja vacío si no tienes.
+5. Condición de éxito: tienes la tabla completa y puedes identificar la competencia con mayor brecha para trabajar primero en este bloque.
+
+<details>
+<summary>Solución de referencia</summary>
+
+| Competencia | ¿La tengo? | Evidencia concreta | Siguiente paso |
+|---|---|---|---|
+| Evolución de contratos entre dominios | Parcialmente | Cambié un modelo compartido y rompí dos features | Versionar contratos con V1/V2 explícitos |
+| Diseño de bounded contexts | No | Todo vive en el mismo módulo `app` | Separar `features/catalog` y `features/profile` con carpetas propias |
+| Migraciones transversales sin bloqueo | No | Los cambios grandes los hacemos "en un PR grande" | Aplicar fase de convivencia dual con adaptador |
+| Gobernanza trimestral multi-equipo | No | No hay proceso formal | Definir una ventana técnica trimestral aunque sea en solitario |
+| Defensa técnica con datos | Parcialmente | Argumento con criterio pero sin métricas escritas | Instrumentar un SLO en el flujo principal |
+
+**Resultado esperado**: El alumno sabe exactamente por dónde empezar el bloque de Maestría según su nivel real, en lugar de leer en abstracto.
+
+</details>
+
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `==>` contrato o abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

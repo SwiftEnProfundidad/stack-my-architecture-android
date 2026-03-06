@@ -429,3 +429,70 @@ Después simula recuperación de red y ejecuta sincronización.
 Finalmente verifica que la tarea queda en `SYNCED` y que la UI muestra estado actualizado sin necesidad de recargar manualmente.
 
 Si puedes explicar ese flujo de extremo a extremo, ya dominaste la base offline-first de nivel Midlevel.
+
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Implementar un `NetworkBoundResource` genérico que sirva los datos locales mientras sincroniza en segundo plano con la API remota para una lista de tareas.
+
+**Pasos**:
+1. Crea la función `networkBoundResource<LocalType, RemoteType>` que acepte un lambda `loadFromDb`, un lambda `fetch` y un lambda `saveFetchResult`, devolviendo `Flow<Resource<LocalType>>`.
+2. El flujo debe emitir `Resource.Loading` con los datos locales, luego intentar el fetch remoto, guardar con `saveFetchResult` y finalmente emitir los datos locales actualizados.
+3. Envuelve el resultado en `sealed class Resource<T>` con los casos `Loading(data: T?)`, `Success(data: T)` y `Error(message: String, data: T?)`.
+4. Condición de éxito: en un test con `FakeTasksDao`, al observar el flow se emite primero `Resource.Loading` con la lista local y después `Resource.Success` con los datos fusionados del remoto.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+
+// 3. Tipo de resultado sellado
+sealed class Resource<out T> {
+    data class Loading<T>(val data: T? = null) : Resource<T>()
+    data class Success<T>(val data: T)          : Resource<T>()
+    data class Error<T>(
+        val message: String,
+        val data: T? = null
+    ) : Resource<T>()
+}
+
+// 1 y 2. NetworkBoundResource genérico
+fun <LocalType, RemoteType> networkBoundResource(
+    loadFromDb: () -> Flow<LocalType>,
+    fetch: suspend () -> RemoteType,
+    saveFetchResult: suspend (RemoteType) -> Unit
+): Flow<Resource<LocalType>> = flow {
+
+    // Emitir datos locales mientras se carga
+    val localData = loadFromDb().first()
+    emit(Resource.Loading(data = localData))
+
+    try {
+        val remoteData = fetch()
+        saveFetchResult(remoteData)
+        emitAll(loadFromDb().map { Resource.Success(it) })
+    } catch (e: Exception) {
+        emitAll(
+            loadFromDb().map { Resource.Error(message = e.message ?: "Error desconocido", data = it) }
+        )
+    }
+}
+
+// Uso típico en repositorio de tareas:
+// fun observeTasksWithSync(): Flow<Resource<List<Task>>> = networkBoundResource(
+//     loadFromDb    = { dao.observeTasks().map { entities -> entities.map { it.toDomain() } } },
+//     fetch         = { remoteDataSource.fetchTasks() },
+//     saveFetchResult = { dtos -> dao.upsertAll(dtos.map { it.toEntity() }) }
+// )
+```
+
+**Resultado esperado**: el flow emite `Resource.Loading` con los datos del DAO local, luego persiste los datos remotos y emite `Resource.Success` con la lista fusionada; si el fetch falla, emite `Resource.Error` con los datos locales disponibles.
+
+</details>
+

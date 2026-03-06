@@ -183,6 +183,88 @@ Si quieres aplicar esta lección mañana en tu proyecto, toma una dependencia nu
 
 Ese hábito es el que prepara el siguiente paso: coordinar migraciones transversales entre varios contextos sin perder control ni ritmo de entrega.
 
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Detectar y romper una dependencia circular entre los módulos `features:catalog` y `features:checkout` introduciendo un contrato de integración en un módulo de contrato neutro.
+
+**Pasos**:
+1. Identifica el ciclo: `catalog` importa `checkout` para obtener `PurchaseEligibilityContract`, y `checkout` importa `catalog` para leer precios. Dibuja o describe el grafo con las tres aristas problemáticas.
+2. Extrae `PurchaseEligibilityContract` a un módulo `:features:checkout:contract` con solo la interfaz (sin lógica) y actualiza `catalog` para que dependa únicamente de ese módulo, no del módulo completo `checkout`.
+3. En el módulo `checkout`, implementa `PurchaseEligibilityAdapter` que satisfaga `PurchaseEligibilityContract` y se registre vía DI en el módulo app.
+4. Condición de éxito: el grafo de dependencias final no tiene aristas circulares; `catalog` solo importa `:features:checkout:contract`, y `checkout` no importa `catalog`.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+// ANTES del refactor (ciclo):
+// features/catalog/build.gradle.kts → implementation(project(":features:checkout"))
+// features/checkout/build.gradle.kts → implementation(project(":features:profile"))
+// features/profile/build.gradle.kts → implementation(project(":features:catalog"))  ← cierra el ciclo
+
+// DESPUÉS del refactor:
+
+// ── Módulo :features:checkout:contract (solo interfaz, sin dependencias de dominio) ──
+package com.stackmyarchitecture.checkout.contract
+
+interface PurchaseEligibilityContract {
+    suspend fun canBuy(userId: String, itemId: String): Boolean
+}
+
+// ── features/catalog (ahora depende SOLO del contrato) ──
+// features/catalog/build.gradle.kts:
+// implementation(project(":features:checkout:contract"))  // ← contrato mínimo
+// NO implementation(project(":features:checkout"))        // ← eliminado
+
+package com.stackmyarchitecture.catalog.application
+
+import com.stackmyarchitecture.checkout.contract.PurchaseEligibilityContract
+
+class CatalogQuickBuyUseCase(
+    private val eligibilityContract: PurchaseEligibilityContract
+) {
+    suspend fun isQuickBuyEnabled(userId: String, itemId: String): Boolean {
+        return eligibilityContract.canBuy(userId = userId, itemId = itemId)
+    }
+}
+
+// ── features/checkout (implementa el contrato; NO importa catalog) ──
+package com.stackmyarchitecture.checkout.infrastructure
+
+import com.stackmyarchitecture.checkout.contract.PurchaseEligibilityContract
+
+class PurchaseEligibilityAdapter : PurchaseEligibilityContract {
+    override suspend fun canBuy(userId: String, itemId: String): Boolean {
+        // Lógica real de elegibilidad; sin importar nada de catalog
+        return userId.isNotBlank() && itemId.isNotBlank()
+    }
+}
+
+// ── Módulo :app (DI - une contrato con implementación) ──
+// @Provides
+// fun providePurchaseEligibility(): PurchaseEligibilityContract = PurchaseEligibilityAdapter()
+```
+
+```yaml
+# docs/architecture/dependency-rules.yml (actualizado tras el refactor)
+allowed:
+  - from: features:catalog
+    to: core:ui
+  - from: features:catalog
+    to: features:checkout:contract   # ← solo el contrato, no el módulo completo
+
+  - from: features:checkout
+    to: features:checkout:contract
+  - from: features:checkout
+    to: features:profile:contract
+```
+
+**Resultado esperado**: el build de Gradle compila sin errores de dependencia circular; `catalog` no tiene acceso al código interno de `checkout`; añadir lógica interna a `checkout` no obliga a recompilar `catalog`.
+
+</details>
+
 <!-- auto-gapfix:layered-mermaid -->
 ## Diagrama de arquitectura por capas
 
@@ -239,8 +321,8 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `==>` contrato o abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

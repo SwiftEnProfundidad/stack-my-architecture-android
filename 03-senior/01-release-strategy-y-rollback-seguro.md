@@ -198,6 +198,68 @@ Una release sana no se define por valentía, se define por diseño. Diseñas par
 Si te quedas con una sola idea de esta lección, que sea esta: publicar no es empujar código, es gestionar riesgo de producto.
 
 En la siguiente lección vamos a aterrizar ese riesgo en un marco de respuesta a incidentes. Ahí veremos cómo transformar un problema en producción en un flujo de diagnóstico y recuperación que tu equipo pueda ejecutar incluso en un mal día.
+
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Crear un build variant `staging` con `applicationIdSuffix = ".staging"` y `versionNameSuffix = "-staging"` que permita instalar la app en producción y en staging simultáneamente en el mismo dispositivo.
+
+**Pasos**:
+1. Abre `app/build.gradle.kts` y añade dentro de `buildTypes` el bloque `create("staging")` con `isDebuggable = false`, `applicationIdSuffix = ".staging"`, `versionNameSuffix = "-staging"` y `signingConfig = getByName("debug").signingConfig`.
+2. Añade `matchingFallbacks += listOf("release")` para que las dependencias resuelvan correctamente contra release.
+3. Sincroniza Gradle y verifica que aparece la tarea `assembleStagingDebug` (o `assembleStaging`) en el panel de Gradle.
+4. Condición de éxito: ejecutar `./gradlew assembleStaging` genera un APK cuyo `applicationId` termina en `.staging`, permitiendo la instalación en paralelo con la variante release.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+// app/build.gradle.kts
+android {
+    namespace   = "com.stackmyarchitecture.app"
+    compileSdk  = 36
+
+    defaultConfig {
+        applicationId = "com.stackmyarchitecture.app"
+        minSdk        = 26
+        targetSdk     = 36
+        versionCode   = 10100
+        versionName   = "1.1.0"
+    }
+
+    buildTypes {
+        getByName("debug") {
+            isMinifyEnabled      = false
+            applicationIdSuffix  = ".debug"
+            versionNameSuffix    = "-debug"
+        }
+
+        getByName("release") {
+            isMinifyEnabled  = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+
+        // Variante staging nueva
+        create("staging") {
+            isDebuggable         = false
+            applicationIdSuffix  = ".staging"       // <-- ID único
+            versionNameSuffix    = "-staging"        // <-- versión identificable
+            signingConfig        = getByName("debug").signingConfig
+            matchingFallbacks   += listOf("release") // <-- fallback para dependencias
+        }
+    }
+}
+```
+
+**Resultado esperado**: `./gradlew assembleStaging` compila sin errores y produce `app-staging.apk` con `applicationId = "com.stackmyarchitecture.app.staging"`; en un dispositivo físico se puede instalar junto a la variante release sin conflicto de paquete.
+
+</details>
+
 <!-- auto-gapfix:layered-mermaid -->
 ## Diagrama de arquitectura por capas
 
@@ -254,8 +316,8 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `==>` contrato o abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

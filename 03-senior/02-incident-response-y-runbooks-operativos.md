@@ -137,6 +137,61 @@ La madurez no se demuestra cuando todo va bien. Se demuestra cuando algo va mal 
 Eso es incident response bien hecho. No heroísmo. No pánico. Sistema.
 
 En la siguiente lección vamos a conectar esta práctica con un marco de SLOs y error budgets para que la prioridad técnica deje de depender de quién habla más fuerte y pase a depender de objetivos de fiabilidad compartidos por todo el equipo.
+
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Documentar un runbook para responder a un crash masivo en producción causado por una NullPointerException en el flujo de login, con señales de activación, pasos de verificación, mitigación y criterio de recuperación.
+
+**Pasos**:
+1. Crea el archivo `docs/runbooks/incident-login-npe.md` con la sección **Señales de activación** que incluya al menos tres métricas observables (tasa de crash, abandono en login, alertas de error_rate).
+2. Añade la sección **Verificación rápida** con pasos numerados para confirmar la versión afectada y si la excepción está correlacionada con un feature flag activo.
+3. Añade la sección **Mitigación inmediata** con la secuencia: pausar rollout → desactivar flag sospechoso → observar recuperación 15 min.
+4. Condición de éxito: cualquier miembro del equipo puede ejecutar el runbook en menos de 10 minutos y llegar a una decisión de "mitigar" o "rollback" sin necesidad de preguntar a otra persona.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```markdown
+<!-- docs/runbooks/incident-login-npe.md -->
+
+# Incident Runbook · Login NullPointerException en producción
+
+## Señales de activación
+- Tasa de crash-free sessions cae por debajo del 99.5% en las últimas 2 horas
+- Aumento de `login_failure_rate` > 2% en cohorte de la versión afectada
+- Alerta de `error_rate_login_flow` activa en el tablero operativo durante > 10 min
+
+## Verificación rápida
+1. Confirmar `app_version` y `android_api_level` de los dispositivos afectados en telemetría
+2. Revisar si la excepción aparece en el stack trace de Crashlytics con tag `LoginViewModel`
+3. Verificar si `isNewSessionFlowEnabled` estaba activo para los usuarios afectados
+4. Comprobar si hay correlación temporal con el último rollout (subida de porcentaje)
+
+## Mitigación inmediata
+1. **Pausar expansión de rollout** en Play Console (mantener % actual, no ampliar)
+2. **Desactivar flag** `isNewSessionFlowEnabled` para todos los segmentos afectados
+3. **Monitorear durante 15 minutos**: crash-free sessions debe volver a > 99.5%
+
+## Validación de recuperación
+- `crash_free_sessions` vuelve a rango objetivo (≥ 99.5%)
+- `login_failure_rate` vuelve a línea base (< 0.5%)
+- No aparecen nuevas alertas de login en los siguientes 30 minutos
+
+## Escalada si no hay recuperación
+- Si la tasa de crash no mejora en 15 min: iniciar rollback completo de versión en producción
+- Notificar al equipo en canal `#incidents` con estado: versión afectada, acción tomada y ETA
+
+## Postmortem
+- Abrir ticket de análisis dentro de las 24 horas siguientes al incidente
+- Incluir causa raíz confirmada, tiempo de impacto y mejora preventiva propuesta
+```
+
+**Resultado esperado**: el documento es legible y ejecutable en menos de 5 minutos; al simularlo en una sesión de equipo, cada persona sabe qué paso le corresponde sin ambigüedad y el tiempo hasta la primera acción de mitigación es inferior a 10 minutos.
+
+</details>
+
 <!-- auto-gapfix:layered-mermaid -->
 ## Diagrama de arquitectura por capas
 
@@ -193,8 +248,8 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `==>` contrato o abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

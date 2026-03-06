@@ -4,7 +4,7 @@ Curso práctico para aprender Android desde cero absoluto (14 años) hasta maest
 
 ## Core Mobile (iOS + Android)
 
-This is a Mobile Architecture framework: iOS depth + Android parity via shared decision-making, quality, operations, and governance.
+This is a Mobile Architecture framework: iOS depth + Android parity via shared decisión-making, quality, operations, and governance.
 
 - [Core Mobile: Introducción](00-core-mobile/00-introduccion.md)
 - [Core Mobile: Crosswalk iOS ↔ Android](00-core-mobile/11-crosswalk-ios-android.md)

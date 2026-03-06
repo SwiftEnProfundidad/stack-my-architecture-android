@@ -366,6 +366,70 @@ Luego provoca un fallo controlado en sincronización y valida en test que existe
 Si puedes mostrar esos tres registros en orden con el mismo `operationId`, ya tienes diagnóstico trazable de extremo a extremo.
 
 
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Agregar logging estructurado con Timber a una operación de red en `TasksRemoteDataSource`, incluyendo etiqueta, mensaje y metadatos clave como `taskId` y `durationMs`.
+
+**Pasos**:
+1. Añade la dependencia de Timber al proyecto e inicializa `Timber.plant(Timber.DebugTree())` en la clase `Application` para entornos de depuración.
+2. En `TasksRemoteDataSource.fetchTasks()`, registra con `Timber.i("fetchTasks | inicio")` antes de la llamada y `Timber.i("fetchTasks | fin | durationMs=%d", elapsed)` al terminar.
+3. Si la llamada falla, registra con `Timber.e(throwable, "fetchTasks | error | %s", throwable.message)`.
+4. Condición de éxito: en Logcat, con el filtro `tag:TasksRemoteDataSource`, aparecen las tres líneas en el orden correcto para un flujo normal, y solo la línea de error cuando falla la red.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+import timber.log.Timber
+
+// Inicialización en Application (solo en debug)
+class App : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        if (BuildConfig.DEBUG) {
+            Timber.plant(Timber.DebugTree())
+        }
+    }
+}
+
+// DataSource con logging estructurado
+class TasksRemoteDataSource(
+    private val api: TasksApiService
+) {
+    suspend fun fetchTasks(): NetworkResult<List<TaskDto>> {
+        val start = System.currentTimeMillis()
+
+        // Paso 2: log de inicio
+        Timber.tag("TasksRemoteDataSource").i("fetchTasks | inicio")
+
+        return try {
+            val result = safeApiCall { api.getTasks() }
+            val elapsed = System.currentTimeMillis() - start
+
+            // Paso 2: log de éxito con duración
+            Timber.tag("TasksRemoteDataSource")
+                .i("fetchTasks | fin | durationMs=%d", elapsed)
+
+            result
+        } catch (t: Throwable) {
+            val elapsed = System.currentTimeMillis() - start
+
+            // Paso 3: log de error con excepción
+            Timber.tag("TasksRemoteDataSource")
+                .e(t, "fetchTasks | error | durationMs=%d | %s", elapsed, t.message)
+
+            NetworkResult.NetworkError(t)
+        }
+    }
+}
+```
+
+**Resultado esperado**: en Logcat con filtro `TasksRemoteDataSource` se leen tres líneas ordenadas (`inicio`, `fin`, duración) para el caso exitoso; en caso de error de red aparece únicamente la línea `error` con el stacktrace adjunto.
+
+</details>
+
 <!-- auto-gapfix:layered-mermaid -->
 ## Diagrama de arquitectura por capas
 
@@ -422,8 +486,8 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `==>` contrato o abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

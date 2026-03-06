@@ -120,8 +120,32 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Escribir una reflexión estructurada sobre qué cambiarías en tu proyecto aplicando lo aprendido en el nivel Senior.
+
+**Pasos**:
+1. Piensa en las cuatro capacidades del baseline Senior: política de release, runbooks, SLOs/error budgets y marco de capacidad.
+2. Para cada una, anota honestamente si existe en tu proyecto hoy: "existe y funciona", "existe solo en papel" o "no existe".
+3. Elige la brecha más dolorosa (la que más impacto tendría si se cerrase) y escribe qué cambiarías en concreto: qué artefacto crearías, qué regla añadirías o qué proceso institucionalizarías.
+4. Redacta un párrafo de 5-8 líneas conectando ese cambio con consecuencias reales en tu equipo o producto.
+5. Condición de éxito: tienes una reflexión escrita con un cambio concreto identificado, justificado con consecuencias observables.
+
+<details>
+<summary>Solución de referencia</summary>
+
+**Ejemplo de reflexión**:
+
+"En mi proyecto no existe una política de release explícita. Las decisiones de cuándo y cómo desplegar dependen del criterio individual de cada desarrollador en el momento. Si aplicara lo aprendido en Senior, definiría una política de dos páginas que incluya: criterios de go/no-go para producción (error rate < 0.5 %, cobertura de tests > 70 %, benchmark sin regresión), canal obligatorio de despliegue gradual (10 % → 50 % → 100 % en 48 h) y un runbook de rollback con pasos enumerados y owner asignado. El impacto real sería que cualquier miembro del equipo podría gestionar un release sin depender de la persona que lo creó, y los incidentes dejarían de resolverse por heroísmo individual."
+
+**Resultado esperado**: El alumno tiene un párrafo concreto que puede convertir directamente en una tarea técnica priorizable.
+
+</details>
+
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `==>` contrato o abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

@@ -91,6 +91,74 @@ En Android, ese cierre se nota enseguida en la mantenibilidad. Bajan condicional
 
 Con esta lección cerramos una parte central de Maestría: no solo diseñar migraciones, sino operarlas con calma incluso cuando hay presión real. En la siguiente, llevaremos esta misma lógica a un caso de escalado organizativo: cómo sostener consistencia técnica cuando varios equipos evolucionan contextos distintos en paralelo durante varios trimestres.
 
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Redactar un comunicado técnico de rollback que informe al equipo sobre la decisión de revertir la versión 1.2.0 en producción, con contexto, impacto, acción tomada y próximos pasos.
+
+**Pasos**:
+1. Escribe el comunicado en formato markdown con las secciones: **Contexto**, **Señal que disparó la decisión**, **Acción tomada**, **Estado actual** y **Próximos pasos**.
+2. Incluye datos concretos ficticios pero verosímiles: versión, porcentaje de usuarios afectados, métrica clave que se degradó y timestamp de la acción de rollback.
+3. Asegúrate de que el tono es informativo y no alarmista; explica que el sistema de seguridad funcionó como se diseñó.
+4. Condición de éxito: cualquier miembro del equipo (incluyendo producto y QA) puede leer el comunicado en menos de 2 minutos y entender qué pasó, qué se hizo y qué esperar a continuación.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```markdown
+<!-- docs/incidents/rollback-v1.2.0-2026-03-06.md -->
+
+# Comunicado técnico · Rollback versión 1.2.0
+
+**Fecha**: 2026-03-06 · 14:42 UTC  
+**Emitido por**: equipo Android  
+**Estado**: RESUELTO (rollback completado)
+
+---
+
+## Contexto
+
+La versión 1.2.0 se publicó en producción el 2026-03-06 a las 10:00 UTC con un rollout
+progresivo al 25% de usuarios. Incluía una mejora en el flujo de login con el flag
+`isNewSessionFlowEnabled` activo para el segmento de prueba.
+
+## Señal que disparó la decisión
+
+A las 14:20 UTC (2h 20 min tras el lanzamiento) se detectó:
+
+- `p95_login_render_ms` subió de 1 800 ms a 4 200 ms en el segmento Android 14 / red móvil
+- `login_failure_rate` alcanzó el 2.3% (umbral de alerta: 1.5%)
+- Budget de login cayó al 14% (por debajo del umbral crítico de 15%)
+
+## Acción tomada
+
+1. **14:25 UTC** · Rollout pausado en Play Console (mantenido en 25%, sin expansión)
+2. **14:28 UTC** · Flag `isNewSessionFlowEnabled` desactivado para todos los segmentos
+3. **14:35 UTC** · Métricas sin mejora → decisión de rollback a versión 1.1.5
+4. **14:42 UTC** · Rollback completado; versión 1.1.5 activa al 100%
+
+## Estado actual
+
+- `p95_login_render_ms`: 1 850 ms ✓ (dentro del SLO)
+- `login_failure_rate`: 0.4% ✓ (por debajo del umbral de alerta)
+- No hay alertas activas
+
+El sistema de seguridad (quality gates, feature flags y monitoreo) funcionó como se diseñó:
+detectamos la degradación antes de alcanzar al 100% de usuarios y revertimos sin pérdida de datos.
+
+## Próximos pasos
+
+- Análisis de causa raíz: abrir ticket ARCH-312 antes del 2026-03-07
+- Revisión del flag `isNewSessionFlowEnabled` en entorno staging con casos límite de red móvil
+- Publicar postmortem en `docs/postmortems/v1.2.0-login.md` con aprendizajes y mejoras preventivas
+- Re-lanzamiento planificado para v1.2.1 con correcciones validadas
+```
+
+**Resultado esperado**: el comunicado puede ser leído y comprendido por cualquier persona del equipo en menos de 2 minutos; no genera preguntas de "¿qué pasó?", sino que directamente orienta hacia los próximos pasos; el tono transmite control y no alarma innecesaria.
+
+</details>
+
 <!-- auto-gapfix:layered-mermaid -->
 ## Diagrama de arquitectura por capas
 
@@ -147,8 +215,8 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `==>` contrato o abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

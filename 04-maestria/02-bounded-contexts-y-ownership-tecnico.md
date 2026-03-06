@@ -280,8 +280,46 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Dibujar el mapa de bounded contexts de tu proyecto Android usando Mermaid.
+
+**Pasos**:
+1. Identifica los dominios principales de tu proyecto (por ejemplo: autenticación, sincronización, formularios, informes, perfil).
+2. Para cada dominio, decide qué expone hacia fuera (contrato público) y qué mantiene como interno.
+3. Identifica las dependencias entre dominios: ¿quién consume a quién? ¿existe alguna dependencia circular?
+4. Dibuja el mapa en Mermaid usando el formato `graph TD` o `graph LR`, con un nodo por contexto y flechas etiquetadas con el contrato que cruza la frontera.
+5. Condición de éxito: el diagrama muestra al menos 3 contextos, las flechas están etiquetadas con el nombre del contrato y puedes identificar visualmente si existe acoplamiento que debería convertirse en contrato explícito.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```mermaid
+graph LR
+  AUTH["auth\n(contrato: SessionContractV1)"]
+  SYNC["sync\n(contrato: SyncStatusContractV1)"]
+  FORMS["forms\n(contrato: FormSubmitContractV1)"]
+  PROFILE["profile\n(contrato: ProfileReadContractV1)"]
+  CORE["core-ui / core-network"]
+
+  AUTH -->|SessionContractV1| FORMS
+  AUTH -->|SessionContractV1| SYNC
+  SYNC -->|SyncStatusContractV1| FORMS
+  PROFILE -->|ProfileReadContractV1| FORMS
+  CORE -.->|utilidades técnicas| AUTH
+  CORE -.->|utilidades técnicas| SYNC
+  CORE -.->|utilidades técnicas| FORMS
+  CORE -.->|utilidades técnicas| PROFILE
+```
+
+**Resultado esperado**: El alumno ve de un vistazo qué contexto tiene más dependencias entrantes (candidato a estabilizar su contrato primero) y qué dependencias directas sobre internals deben convertirse en contratos formales.
+
+</details>
+
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `==>` contrato o abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

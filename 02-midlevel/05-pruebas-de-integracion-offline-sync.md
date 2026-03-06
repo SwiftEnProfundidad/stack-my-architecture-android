@@ -489,6 +489,45 @@ Ese salto es clave para nivel midlevel. Te permite evolucionar la app con más v
 
 En el siguiente módulo continuaremos con endurecimiento de calidad en CI y ejecución automatizada de estos casos en pipeline para que cada pull request valide consistencia offline-sync antes de merge.
 
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Añadir una prueba de integración que demuestre que dos tareas pendientes se sincronizan y quedan en estado `SYNCED`.
+
+**Pasos**:
+1. Prepara una base Room in-memory y un fake de API que responda éxito.
+2. Inserta dos tareas con `syncState = PENDING`.
+3. Ejecuta el orquestador de sincronización real del módulo.
+4. Consulta Room al final del flujo.
+5. Condición de éxito: la API recibe dos payloads y las dos tareas quedan persistidas como `SYNCED`.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+@Test
+fun syncPendingTasks_marksAllPendingRowsAsSynced() = runTest {
+    val deps = makeIntegrationDeps()
+
+    deps.tasksDao.insert(TaskEntity(id = "task-4", title = "A", done = false, syncState = SyncState.PENDING))
+    deps.tasksDao.insert(TaskEntity(id = "task-5", title = "B", done = true, syncState = SyncState.PENDING))
+
+    deps.orchestrator.syncPendingTasks()
+
+    val a = deps.tasksDao.findById("task-4") ?: error("task-4 no encontrada")
+    val b = deps.tasksDao.findById("task-5") ?: error("task-5 no encontrada")
+
+    assertThat(deps.api.sentPayloads).hasSize(2)
+    assertThat(a.syncState).isEqualTo(SyncState.SYNCED)
+    assertThat(b.syncState).isEqualTo(SyncState.SYNCED)
+}
+```
+
+**Resultado esperado**: el test falla si la sincronización no envía ambos cambios o si deja filas pendientes tras terminar.
+
+</details>
+
 <!-- auto-gapfix:layered-mermaid -->
 ## Diagrama de arquitectura por capas
 
@@ -545,8 +584,8 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `==>` contrato o abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

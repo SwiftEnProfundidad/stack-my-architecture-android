@@ -359,8 +359,70 @@ Después explica en 5 líneas por qué ese cambio se reflejó sin recargar manua
 
 Si puedes responder eso, entendiste el corazón de Room offline-first.
 
-<!-- semantica-flechas:auto -->
-## Semantica de flechas aplicada a esta arquitectura
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Agregar una nueva columna `priority: Int` a la entidad `TaskEntity` de Room y crear la migración correspondiente de versión 1 a versión 2.
+
+**Pasos**:
+1. Añade el campo `val priority: Int = 0` a `TaskEntity` y actualiza `version = 2` en `@Database`.
+2. Crea el objeto `MIGRATION_1_2` usando `Migration(1, 2)` con la sentencia SQL `ALTER TABLE tasks ADD COLUMN priority INTEGER NOT NULL DEFAULT 0`.
+3. Pasa la migración en el builder de Room: `.addMigrations(MIGRATION_1_2)`.
+4. Condición de éxito: la app compila y arranca sin lanzar `IllegalStateException` de esquema distinto al esperado; las filas existentes tienen `priority = 0`.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+import androidx.room.Database
+import androidx.room.Entity
+import androidx.room.Migration
+import androidx.room.PrimaryKey
+import androidx.room.RoomDatabase
+import androidx.sqlite.db.SupportSQLiteDatabase
+
+// 1. Entidad actualizada con nueva columna
+@Entity(tableName = "tasks")
+data class TaskEntity(
+    @PrimaryKey val id: String,
+    val title: String,
+    val isDone: Boolean,
+    val updatedAt: Long,
+    val priority: Int = 0   // <-- campo nuevo
+)
+
+// 2. Migración de esquema
+val MIGRATION_1_2 = object : Migration(1, 2) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL(
+            "ALTER TABLE tasks ADD COLUMN priority INTEGER NOT NULL DEFAULT 0"
+        )
+    }
+}
+
+// 3. Base de datos con migración registrada
+@Database(
+    entities = [TaskEntity::class],
+    version = 2,             // <-- versión incrementada
+    exportSchema = true
+)
+abstract class AppDatabase : RoomDatabase() {
+    abstract fun tasksDao(): TasksDao
+}
+
+// Uso en el builder (habitualmente en el módulo DI):
+// Room.databaseBuilder(context, AppDatabase::class.java, "app_database")
+//     .addMigrations(MIGRATION_1_2)
+//     .build()
+```
+
+**Resultado esperado**: la app migra la base de datos existente sin borrar datos; los registros previos conservan sus valores y el campo `priority` aparece con valor `0` en todas las filas antiguas.
+
+</details>
+
+<!-- semántica-flechas:auto -->
+## Semántica de flechas aplicada a esta arquitectura
 
 ```mermaid
 flowchart LR
@@ -388,10 +450,10 @@ flowchart LR
     IMPL --> LOCAL
 ```text
 
-Lectura semantica minima de este diagrama:
+Lectura semántica mínima de este diagrama:
 
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring y configuracion de ensamblado.
-3. `==>` dependencia contra contrato/abstraccion.
-4. `--o` salida/propagacion desde implementacion concreta.
+2. `-.->` wiring y configuración de ensamblado.
+3. `==>` dependencia contra contrato/abstracción.
+4. `--o` salida/propagación desde implementación concreta.
 

@@ -103,6 +103,51 @@ Si tras dos o tres iteraciones no ves mejoras en las métricas que motivaron las
 Este módulo marca un cambio importante en la manera de trabajar. Ya no solo sabes construir y proteger calidad. Ahora también sabes elegir con criterio qué mejora técnica debe ir primero para mover realmente la aguja del producto.
 
 En el siguiente tramo vamos a llevar esta misma lógica a arquitectura entre features, para que las decisiones de dependencia y límites de módulo también se tomen con evidencia y no con intuición.
+
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Priorizar dos iniciativas técnicas usando métricas en lugar de intuición.
+
+**Pasos**:
+1. Define dos tareas técnicas candidatas, por ejemplo “reducir latencia de sync” y “limpiar un módulo interno”.
+2. Asigna a cada una una métrica afectada, una ruta de usuario impactada y un riesgo asociado.
+3. Ordena primero la tarea que mueve una métrica crítica en ruta crítica.
+4. Escribe en dos frases por qué la otra tarea espera.
+5. Condición de éxito: la priorización puede defenderse con evidencia y no con gustos personales.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+data class TechInvestment(
+    val name: String,
+    val metric: String,
+    val criticalPath: Boolean,
+    val currentImpact: String
+)
+
+val latency = TechInvestment(
+    name = "Reducir latencia de sync",
+    metric = "sync_duration_ms_p95",
+    criticalPath = true,
+    currentImpact = "Usuarios ven retrasos al cerrar tareas en campo"
+)
+
+val cleanup = TechInvestment(
+    name = "Limpiar utilidades internas de navegación",
+    metric = "ninguna critica",
+    criticalPath = false,
+    currentImpact = "Mejora interna, pero sin daño visible inmediato"
+)
+
+val prioritized = listOf(latency, cleanup).sortedByDescending { it.criticalPath }
+```
+
+**Resultado esperado**: la tarea ligada a una métrica crítica y a una ruta de usuario real queda primero sin necesidad de debates circulares.
+
+</details>
 <!-- auto-gapfix:layered-mermaid -->
 ## Diagrama de arquitectura por capas
 
@@ -159,8 +204,8 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `==>` contrato o abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

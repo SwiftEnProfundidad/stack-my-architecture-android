@@ -99,8 +99,34 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Preparar 5 preguntas inteligentes para hacerlas en tu primera reunión técnica de equipo.
+
+**Pasos**:
+1. Piensa en la situación real: llegas nuevo a un equipo Android. Antes de proponer nada, necesitas entender el sistema y el contexto de decisiones que llevó a donde está hoy.
+2. Escribe 5 preguntas que demuestren criterio técnico sin sonar a interrogatorio. Cada pregunta debe apuntar a entender arquitectura, decisiones pasadas, puntos de dolor o procesos de trabajo reales.
+3. Evita preguntas de respuesta sí/no. Busca preguntas abiertas que inviten a compartir contexto ("¿cómo decidisteis X?" en lugar de "¿usáis X?").
+4. Revisa que ninguna de las 5 preguntas se pueda responder mirando el README o el código. Deben requerir criterio humano para responder.
+5. Condición de éxito: tienes 5 preguntas escritas que podrías hacer en los primeros 30 minutos de una revisión técnica sin generar incomodidad, y cada una abriría una conversación útil de al menos 5 minutos.
+
+<details>
+<summary>Solución de referencia</summary>
+
+1. **Sobre decisiones pasadas**: "¿Hay alguna decisión de arquitectura que hoy haríais diferente? ¿Qué aprendisteis de ella?"
+2. **Sobre puntos de dolor actuales**: "¿Cuál es la parte del sistema que más os cuesta cambiar sin riesgo de romper algo? ¿Por qué llegó a ese estado?"
+3. **Sobre procesos de calidad**: "¿Cómo decidís si algo está listo para producción? ¿Existe algún criterio explícito o depende del criterio de cada persona?"
+4. **Sobre coordinación entre módulos o equipos**: "Cuando un cambio toca varios módulos a la vez, ¿cómo coordináis la entrega para que no haya bloqueos entre branches?"
+5. **Sobre gestión de incidentes**: "¿Cómo fue el último incidente relevante en producción? ¿Qué cambió en el proceso después de él?"
+
+**Resultado esperado**: El alumno entra a la primera reunión técnica con preguntas preparadas que transmiten madurez profesional, generan confianza y le dan información de alto valor para entender el sistema real desde el primer día.
+
+</details>
+
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `==>` contrato o abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

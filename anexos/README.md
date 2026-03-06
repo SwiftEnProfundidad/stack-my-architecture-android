@@ -6,9 +6,10 @@ Este directorio agrupa material de apoyo transversal para reforzar aprendizaje y
 
 1. Fundamentos:
 - [glosario.md](glosario.md)
+- [troubleshooting.md](troubleshooting.md)
 
 2. Operación y publicación:
-- [guia-publicacion-playstore-real.md](guia-publicacion-playstore-real.md)
+- [guia-publicación-playstore-real.md](guia-publicación-playstore-real.md)
 
 3. Preparación profesional:
 - [preguntas-entrevista-android.md](preguntas-entrevista-android.md)

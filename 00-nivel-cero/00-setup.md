@@ -12,7 +12,7 @@ Con Android Studio abierto, vamos a preparar el SDK correcto. Abre el gestor de 
 
 El siguiente paso es confirmar el JDK 17. El JDK es un conjunto de herramientas que Gradle necesita para construir el proyecto. Abre una terminal y ejecuta el comando `java -version`. El resultado esperado debe indicar versión 17. Si aparece otra versión, instala JDK 17 y configura Android Studio para usarlo en la sección de Gradle JDK. Después sincroniza el proyecto para que el cambio se aplique correctamente.
 
-Cuando SDK y JDK estén listos, vamos a hacer la prueba definitiva: crear un proyecto vacío y ejecutarlo. Dentro de Android Studio crea un proyecto nuevo con plantilla base de Compose. No cambies configuraciones avanzadas todavía. Pulsa ejecutar y abre la app en emulador o dispositivo real. Si todo está bien, verás una pantalla inicial sin errores críticos.
+Cuando SDK y JDK estén listos, vamos a hacer la prueba definitiva: crear un proyecto vacío y ejecutarlo. Dentro de Android Studio crea un proyecto nuevo con plantilla base de Compose. No cambies configuraciónes avanzadas todavía. Pulsa ejecutar y abre la app en emulador o dispositivo real. Si todo está bien, verás una pantalla inicial sin errores críticos.
 
 Si en este punto falla la compilación, no significa que “no valgas para programar”. Significa que hay una pieza técnica que ajustar. Lo más habitual es que falle la sincronización de Gradle por una versión incorrecta de JDK o por un SDK incompleto. En ese caso, vuelve a revisar esos dos puntos en ese orden.
 
@@ -79,8 +79,8 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `==>` contrato o abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

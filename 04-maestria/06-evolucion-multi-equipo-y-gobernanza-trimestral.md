@@ -128,8 +128,55 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Redactar un RFC de una página para proponer un cambio transversal en tu proyecto.
+
+**Pasos**:
+1. Elige un cambio que afecte a más de un módulo o dominio de tu proyecto (por ejemplo: migrar de un sistema de navegación a otro, cambiar la política de caché, o introducir un nuevo contrato de autenticación).
+2. Escribe el RFC siguiendo esta estructura mínima: (a) Título y autor, (b) Problema que resuelve, (c) Propuesta concreta, (d) Alternativas descartadas y por qué, (e) Impacto en equipos/módulos consumidores, (f) Criterio de aceptación y fecha límite de decisión.
+3. Mantén cada sección en no más de 3-4 frases.
+4. Comparte el RFC con al menos una persona (compañero, mentor o comunidad) y recoge una pregunta o comentario.
+5. Condición de éxito: el RFC cabe en una página A4, cualquier lector puede entender el cambio propuesto sin preguntar contexto adicional y existe una fecha de decisión explícita.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```markdown
+# RFC-001 · Migración de navegación a Navigation Compose
+**Autor**: [tu nombre] · **Fecha límite de decisión**: 2026-04-01
+
+## Problema
+El sistema de navegación actual con FragmentManager genera acoplamiento entre pantallas
+y dificulta las pruebas de flujos completos. Cada nueva pantalla requiere cambios en
+múltiples ficheros no relacionados.
+
+## Propuesta
+Migrar a Navigation Compose con un único NavHost en la raíz de la app. Cada feature
+expone su grafo de navegación como función interna y lo registra en el grafo global
+mediante una interfaz `FeatureNavGraph`.
+
+## Alternativas descartadas
+- Mantener FragmentManager: deuda creciente que bloquea adopción de Compose.
+- Migración big-bang: riesgo de bloquear features en vuelo durante semanas.
+
+## Impacto en consumidores
+Los módulos `auth`, `forms` y `profile` deben exponer su `NavGraph` nuevo.
+Ventana de convivencia estimada: 3 sprints con adaptador de compatibilidad.
+
+## Criterio de aceptación
+100 % de pantallas críticas migradas, tests de navegación en verde, sin regresión
+de tiempo de arranque medida en benchmark.
+```
+
+**Resultado esperado**: El alumno tiene un documento de una página que puede presentar en una reunión de 10 minutos y que genera conversación técnica de calidad en lugar de debate de opiniones.
+
+</details>
+
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `==>` contrato o abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

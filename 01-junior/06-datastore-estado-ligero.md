@@ -355,7 +355,7 @@ Síntoma: comportamiento inesperado al volver de background.
 
 Error 3: duplicar DataStore con nombres distintos.
 
-Síntoma: configuraciones inconsistentes en diferentes pantallas.
+Síntoma: configuraciónes inconsistentes en diferentes pantallas.
 
 ---
 
@@ -373,8 +373,77 @@ Finalmente, explica en 6 líneas por qué esta solución usa DataStore y no Room
 
 Si puedes responder sin dudar, entendiste DataStore con criterio arquitectónico.
 
-<!-- semantica-flechas:auto -->
-## Semantica de flechas aplicada a esta arquitectura
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Leer y escribir un `Boolean` llamado `notifications_enabled` en DataStore Preferences a través de un repositorio, sin acceder a DataStore directamente desde la UI.
+
+**Pasos**:
+1. Define la clave `val NOTIFICATIONS_KEY = booleanPreferencesKey("notifications_enabled")` junto a la clave existente de modo oscuro.
+2. Añade `val isNotificationsEnabled: Flow<Boolean>` y `suspend fun setNotificationsEnabled(enabled: Boolean)` al contrato `UserPreferencesRepository`.
+3. Implementa ambos en `UserPreferencesRepositoryImpl` siguiendo el mismo patrón que `isDarkModeEnabled` / `setDarkMode`.
+4. Condición de éxito: un test unitario con un `FakeDataStore` (o TestCoroutineScope) demuestra que, tras llamar `setNotificationsEnabled(true)`, `isNotificationsEnabled.first()` devuelve `true`.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+
+// Extensión del Context (definida una sola vez en el proyecto)
+val Context.userPreferencesDataStore: DataStore<Preferences> by preferencesDataStore(
+    name = "user_preferences"
+)
+
+// Claves tipadas
+private val DARK_MODE_KEY        = booleanPreferencesKey("dark_mode")
+private val NOTIFICATIONS_KEY    = booleanPreferencesKey("notifications_enabled")  // <-- nueva
+
+// Contrato ampliado
+interface UserPreferencesRepository {
+    val isDarkModeEnabled: Flow<Boolean>
+    suspend fun setDarkMode(enabled: Boolean)
+
+    val isNotificationsEnabled: Flow<Boolean>             // <-- nuevo
+    suspend fun setNotificationsEnabled(enabled: Boolean) // <-- nuevo
+}
+
+// Implementación
+class UserPreferencesRepositoryImpl(
+    private val dataStore: DataStore<Preferences>
+) : UserPreferencesRepository {
+
+    override val isDarkModeEnabled: Flow<Boolean> =
+        dataStore.data.map { it[DARK_MODE_KEY] ?: false }
+
+    override suspend fun setDarkMode(enabled: Boolean) {
+        dataStore.edit { it[DARK_MODE_KEY] = enabled }
+    }
+
+    // Nueva clave
+    override val isNotificationsEnabled: Flow<Boolean> =
+        dataStore.data.map { it[NOTIFICATIONS_KEY] ?: true }   // por defecto activas
+
+    override suspend fun setNotificationsEnabled(enabled: Boolean) {
+        dataStore.edit { it[NOTIFICATIONS_KEY] = enabled }
+    }
+}
+```
+
+**Resultado esperado**: tras `setNotificationsEnabled(true)`, el flujo `isNotificationsEnabled` emite `true`; tras `setNotificationsEnabled(false)`, emite `false`. El valor persiste entre reinicios de la app.
+
+</details>
+
+<!-- semántica-flechas:auto -->
+## Semántica de flechas aplicada a esta arquitectura
 
 ```mermaid
 flowchart LR
@@ -402,10 +471,10 @@ flowchart LR
     IMPL --> LOCAL
 ```text
 
-Lectura semantica minima de este diagrama:
+Lectura semántica mínima de este diagrama:
 
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring y configuracion de ensamblado.
-3. `==>` dependencia contra contrato/abstraccion.
-4. `--o` salida/propagacion desde implementacion concreta.
+2. `-.->` wiring y configuración de ensamblado.
+3. `==>` dependencia contra contrato/abstracción.
+4. `--o` salida/propagación desde implementación concreta.
 

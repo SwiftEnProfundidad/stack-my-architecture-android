@@ -167,6 +167,77 @@ Para cerrar, vamos con un mini reto. Añade un nuevo evento `OnRefreshPulled` y 
 
 Si completas esta práctica, ya tienes una base junior real: feature separada, estado consistente, eventos explícitos, ViewModel por pantalla y repositorio desacoplado.
 
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Añadir un nuevo evento `OnRefreshPulled` a la `sealed interface TasksEvent` existente y conectarlo al mismo flujo de carga que `OnRetryClicked`.
+
+**Pasos**:
+1. Abre la `sealed interface TasksEvent` y añade `data object OnRefreshPulled : TasksEvent`.
+2. En `TasksViewModel`, dentro del bloque `when` de `onEvent`, añade el caso `TasksEvent.OnRefreshPulled -> loadTasks()`.
+3. En `TasksScreen`, añade un `Button` con el texto "Actualizar" que llame a `viewModel.onEvent(TasksEvent.OnRefreshPulled)`.
+4. Condición de éxito: al pulsar "Actualizar", la lista vuelve a mostrarse sin error y `uiState.isLoading` pasa por `true` antes de completarse.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+
+// 1. Evento nuevo añadido
+sealed interface TasksEvent {
+    data object OnScreenStarted : TasksEvent
+    data object OnRetryClicked  : TasksEvent
+    data object OnRefreshPulled : TasksEvent   // <-- nuevo
+}
+
+// 2. ViewModel actualizado
+class TasksViewModel(
+    private val repository: TasksRepository
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(TasksUiState())
+    val uiState: StateFlow<TasksUiState> = _uiState
+
+    fun onEvent(event: TasksEvent) {
+        when (event) {
+            TasksEvent.OnScreenStarted -> loadTasks()
+            TasksEvent.OnRetryClicked  -> loadTasks()
+            TasksEvent.OnRefreshPulled -> loadTasks()   // <-- nuevo caso
+        }
+    }
+
+    private fun loadTasks() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            runCatching { repository.getTasks() }
+                .onSuccess { tasks ->
+                    _uiState.value = TasksUiState(isLoading = false, tasks = tasks)
+                }
+                .onFailure { throwable ->
+                    _uiState.value = TasksUiState(
+                        isLoading = false,
+                        errorMessage = throwable.message ?: "No se pudieron cargar las tareas"
+                    )
+                }
+        }
+    }
+}
+
+// 3. Uso en UI (fragmento)
+// Button(onClick = { viewModel.onEvent(TasksEvent.OnRefreshPulled) }) {
+//     Text("Actualizar")
+// }
+```
+
+**Resultado esperado**: al pulsar el botón "Actualizar", la pantalla muestra brevemente el indicador de carga y luego presenta la lista de tareas actualizada (o el error si el repositorio falla).
+
+</details>
 
 <!-- auto-gapfix:layered-mermaid -->
 ## Diagrama de arquitectura por capas
@@ -224,8 +295,8 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `==>` contrato o abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

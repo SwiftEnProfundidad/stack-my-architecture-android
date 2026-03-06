@@ -88,8 +88,37 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Escribir una carta de cierre al "yo del primer día": qué le dirías y qué aprendiste en el recorrido.
+
+**Pasos**:
+1. Recuerda cómo llegaste al inicio de este curso: qué sabías, qué no sabías, qué miedos o dudas tenías sobre Android o sobre tu nivel técnico.
+2. Escribe la carta en primera persona, dirigida a ese "tú del primer día". Mínimo 3 párrafos.
+3. En el primer párrafo: dile qué es lo más importante que vas a aprender (sin spoilers técnicos, solo la actitud o el cambio de mentalidad).
+4. En el segundo párrafo: nombra el momento más difícil del recorrido y qué aprendiste de él.
+5. En el tercer párrafo: dile en qué punto estás ahora y qué sigue después de cerrar el curso.
+6. Condición de éxito: la carta tiene al menos 3 párrafos completos, es honesta (no solo positiva), y podrías leerla en voz alta sin sentir que estás mintiendo.
+
+<details>
+<summary>Solución de referencia</summary>
+
+**Ejemplo de carta**:
+
+"Hola. Sé que ahora mismo estás mirando la estructura del proyecto y pensando que nunca vas a entender para qué sirven todas esas capas. No te preocupes: tampoco las entenderás al principio. Lo que vas a aprender no es a memorizar patrones. Es a hacerte la pregunta correcta antes de tocar código: ¿qué problema estoy resolviendo y qué coste arrastra esta decisión en el futuro?
+
+Lo más difícil del recorrido fue aceptar que a veces la solución correcta es la más simple, no la más elegante. Hubo un momento en que añadí una capa de abstracción que nadie pedía y que ralentizó tres sprints. Fue incómodo reconocerlo. Pero esa incomodidad me enseñó algo que no olvidaré: el código que diseñas para el ego técnico suele ser el código que el equipo odia mantener.
+
+Ahora sé pensar en capas, en riesgos y en evolución al mismo tiempo. No soy el mejor, pero soy alguien en quien un equipo puede confiar para tomar una decisión difícil con datos y defenderla con calma. Eso es lo que sigue: aplicar esto en un proyecto real, con presión real, y seguir aprendiendo de los errores que todavía no sé que voy a cometer."
+
+**Resultado esperado**: El alumno cierra el curso con una pieza escrita que refleja crecimiento real, no solo conocimiento acumulado. La carta puede convertirse en el primer párrafo de un perfil profesional o de una charla técnica futura.
+
+</details>
+
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `==>` contrato o abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

@@ -329,8 +329,82 @@ Finalmente rompe voluntariamente una ruta para observar el error y vuelve a corr
 
 Cuando termines este reto, ya tendrás una base de navegación moderna que podrás usar en todo el curso sin deuda técnica innecesaria.
 
-<!-- semantica-flechas:auto -->
-## Semantica de flechas aplicada a esta arquitectura
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Añadir una nueva ruta `settings` con destino tipado en `AppRoute` y navegar a ella desde `HomeScreen` con un `NavController`.
+
+**Pasos**:
+1. Añade `data object Settings : AppRoute("settings")` a la `sealed class AppRoute`.
+2. En `AppNavHost`, registra el nuevo destino con `composable(AppRoute.Settings.route) { SettingsScreen(onBack = { navController.popBackStack() }) }`.
+3. En `HomeScreen`, añade un botón "Ajustes" que dispare el callback `onGoToSettings` (recibido por parámetro).
+4. Condición de éxito: al pulsar "Ajustes" desde Home, la app navega a `SettingsScreen` y el botón atrás de esa pantalla devuelve correctamente a Home.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+
+// 1. Ruta tipada nueva
+sealed class AppRoute(val route: String) {
+    data object Home     : AppRoute("home")
+    data object Tasks    : AppRoute("tasks")
+    data object Settings : AppRoute("settings")   // <-- nueva
+}
+
+// 2. NavHost con destino Settings registrado
+@Composable
+fun AppNavHost(
+    navController: NavHostController,
+    startDestination: String = AppRoute.Home.route
+) {
+    NavHost(navController = navController, startDestination = startDestination) {
+        composable(AppRoute.Home.route) {
+            HomeScreen(
+                onGoToTasks    = { navController.navigate(AppRoute.Tasks.route) },
+                onGoToSettings = { navController.navigate(AppRoute.Settings.route) }   // <-- nuevo
+            )
+        }
+        composable(AppRoute.Tasks.route) {
+            TasksScreen(onBack = { navController.popBackStack() }, onTaskClicked = {})
+        }
+        composable(AppRoute.Settings.route) {   // <-- nuevo destino
+            SettingsScreen(onBack = { navController.popBackStack() })
+        }
+    }
+}
+
+// 3. HomeScreen con botón de ajustes
+@Composable
+fun HomeScreen(
+    onGoToTasks: () -> Unit,
+    onGoToSettings: () -> Unit
+) {
+    Button(onClick = onGoToSettings) { Text("Ajustes") }
+    Button(onClick = onGoToTasks)    { Text("Tareas")  }
+}
+
+// Pantalla de ajustes mínima
+@Composable
+fun SettingsScreen(onBack: () -> Unit) {
+    Button(onClick = onBack) { Text("Volver") }
+}
+```
+
+**Resultado esperado**: la app compila sin errores; al pulsar "Ajustes" en Home se muestra `SettingsScreen`, y al pulsar "Volver" se regresa a Home sin stack roto.
+
+</details>
+
+<!-- semántica-flechas:auto -->
+## Semántica de flechas aplicada a esta arquitectura
 
 ```mermaid
 flowchart LR
@@ -358,10 +432,10 @@ flowchart LR
     IMPL --> LOCAL
 ```text
 
-Lectura semantica minima de este diagrama:
+Lectura semántica mínima de este diagrama:
 
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring y configuracion de ensamblado.
-3. `==>` dependencia contra contrato/abstraccion.
-4. `--o` salida/propagacion desde implementacion concreta.
+2. `-.->` wiring y configuración de ensamblado.
+3. `==>` dependencia contra contrato/abstracción.
+4. `--o` salida/propagación desde implementación concreta.
 

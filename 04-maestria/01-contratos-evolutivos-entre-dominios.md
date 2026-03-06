@@ -158,6 +158,130 @@ La evolución entre dominios no tiene por qué ser dolorosa si el contrato está
 Cuando haces esto bien, cada dominio conserva autonomía sin convertir la integración en una fuente constante de regresiones.
 
 En la siguiente lección vamos a profundizar en límites de contexto y ownership técnico para que esa autonomía no se quede solo en contratos, sino que también se refleje en organización de código, decisiones y responsabilidad operativa.
+
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Versionar un contrato añadiendo un campo opcional `discountPercent: Int?` en `CatalogItemContractV2` sin romper a los consumidores que siguen usando `CatalogItemContractV1`.
+
+**Pasos**:
+1. Crea `CatalogItemContractV2` añadiendo el campo `val discountPercent: Int? = null` al modelo `CatalogItemContractV1` existente, manteniendo `V1` sin cambios.
+2. Implementa `CatalogContractAdapter` que satisfaga ambas interfaces: en el método `V1.getItemById` no incluye el descuento, y en el método `V2.getItemById` lo expone si el modelo interno lo contiene.
+3. Escribe un test unitario que verifique: (a) el adaptador devuelve `V1` sin campo de descuento y (b) el adaptador devuelve `V2` con `discountPercent = 15` cuando el modelo interno lo tiene.
+4. Condición de éxito: los tests pasan y el código que consume `V1` no necesita modificarse para seguir compilando tras añadir `V2`.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+import junit.framework.TestCase.assertEquals
+import junit.framework.TestCase.assertNull
+import org.junit.Test
+
+// Contratos públicos
+data class CatalogItemContractV1(
+    val id: String,
+    val title: String,
+    val priceCents: Long,
+    val currency: String,
+    val isAvailable: Boolean
+)
+
+data class CatalogItemContractV2(
+    val id: String,
+    val title: String,
+    val basePriceCents: Long,
+    val finalPriceCents: Long,
+    val currency: String,
+    val discountPercent: Int? = null,   // <-- campo nuevo opcional
+    val isAvailable: Boolean
+)
+
+interface CatalogReadContractV1 {
+    suspend fun getItemById(itemId: String): CatalogItemContractV1?
+}
+
+interface CatalogReadContractV2 {
+    suspend fun getItemById(itemId: String): CatalogItemContractV2?
+}
+
+// Modelo interno del dominio catalog
+data class CatalogItem(
+    val id: String,
+    val title: String,
+    val basePriceCents: Long,
+    val finalPriceCents: Long,
+    val currency: String,
+    val discountPercent: Int?,
+    val isAvailable: Boolean
+)
+
+// Adaptador que implementa ambos contratos
+class CatalogContractAdapter(
+    private val items: Map<String, CatalogItem>   // repositorio simulado para el test
+) : CatalogReadContractV1, CatalogReadContractV2 {
+
+    override suspend fun getItemById(itemId: String): CatalogItemContractV1? {
+        val item = items[itemId] ?: return null
+        return CatalogItemContractV1(
+            id          = item.id,
+            title       = item.title,
+            priceCents  = item.finalPriceCents,   // V1 expone precio final sin descuento explícito
+            currency    = item.currency,
+            isAvailable = item.isAvailable
+        )
+    }
+
+    // Necesitamos alias para evitar conflicto de JVM al tener dos `getItemById`
+    suspend fun getItemByIdV2(itemId: String): CatalogItemContractV2? {
+        val item = items[itemId] ?: return null
+        return CatalogItemContractV2(
+            id               = item.id,
+            title            = item.title,
+            basePriceCents   = item.basePriceCents,
+            finalPriceCents  = item.finalPriceCents,
+            currency         = item.currency,
+            discountPercent  = item.discountPercent,  // <-- nuevo campo expuesto
+            isAvailable      = item.isAvailable
+        )
+    }
+}
+
+// Tests
+class CatalogContractAdapterTest {
+
+    private val sampleItem = CatalogItem(
+        id               = "prod-1",
+        title            = "Teclado mecánico",
+        basePriceCents   = 10000L,
+        finalPriceCents  = 8500L,
+        currency         = "EUR",
+        discountPercent  = 15,
+        isAvailable      = true
+    )
+    private val adapter = CatalogContractAdapter(mapOf("prod-1" to sampleItem))
+
+    @Test
+    fun v1ContractDoesNotExposeDiscount() = kotlinx.coroutines.runBlocking {
+        val result = adapter.getItemById("prod-1")
+        assertEquals(8500L, result?.priceCents)
+        // V1 no tiene campo discountPercent → compila sin él
+    }
+
+    @Test
+    fun v2ContractExposesDiscountPercent() = kotlinx.coroutines.runBlocking {
+        val result = adapter.getItemByIdV2("prod-1")
+        assertEquals(15, result?.discountPercent)
+        assertEquals(10000L, result?.basePriceCents)
+    }
+}
+```
+
+**Resultado esperado**: los dos tests pasan en verde; el consumidor que usa `CatalogReadContractV1` no requiere ningún cambio; el consumidor que adopta `V2` puede leer el descuento sin que esto afecte a nadie que aún esté en `V1`.
+
+</details>
+
 <!-- auto-gapfix:layered-mermaid -->
 ## Diagrama de arquitectura por capas
 
@@ -214,8 +338,8 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `==>` contrato o abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

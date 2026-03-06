@@ -165,8 +165,70 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Diseñar la migración de un DAO de Room que añade una tabla nueva sin downtime ni pérdida de datos.
+
+**Pasos**:
+1. Define una entidad Room existente en tu proyecto (o usa `UserEntity` como ejemplo) y decide qué tabla nueva necesitas añadir (por ejemplo: `AuditLogEntity` para trazabilidad de cambios).
+2. Escribe la clase `Migration(1, 2)` de Room con el SQL necesario para crear la tabla nueva sin tocar las existentes.
+3. Registra la migración en el builder de tu `RoomDatabase` usando `.addMigrations(MIGRATION_1_2)`.
+4. Escribe un test de migración usando `MigrationTestHelper` que verifique que la base de datos existente sobrevive la actualización con los datos intactos.
+5. Condición de éxito: el test de migración pasa en verde y la app arranca sin `fallbackToDestructiveMigration`.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+// Entidad nueva
+@Entity(tableName = "audit_log")
+data class AuditLogEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val action: String,
+    val entityId: String,
+    val timestamp: Long
+)
+
+// Migración
+val MIGRATION_1_2 = object : Migration(1, 2) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `audit_log` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `action` TEXT NOT NULL,
+                `entity_id` TEXT NOT NULL,
+                `timestamp` INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+    }
+}
+
+// Registro en RoomDatabase
+Room.databaseBuilder(context, AppDatabase::class.java, "app_db")
+    .addMigrations(MIGRATION_1_2)
+    .build()
+
+// Test de migración
+@Test
+fun migrate1To2_tableCreatedWithoutDataLoss() {
+    helper.createDatabase(TEST_DB, 1).apply { close() }
+    val db = helper.runMigrationsAndValidate(TEST_DB, 2, true, MIGRATION_1_2)
+    db.query("SELECT * FROM audit_log").use { cursor ->
+        assertTrue(cursor.count == 0) // tabla vacía, sin error
+    }
+}
+```
+
+**Resultado esperado**: La migración crea la tabla `audit_log` sin destruir la base de datos existente, y el test valida el esquema resultante contra el esperado por Room.
+
+</details>
+
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `==>` contrato o abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

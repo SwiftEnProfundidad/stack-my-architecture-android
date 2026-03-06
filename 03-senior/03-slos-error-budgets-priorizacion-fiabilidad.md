@@ -146,6 +146,74 @@ SLO y error budget no son un lujo de grandes empresas. Son una forma simple de p
 Cuando incorporas este marco en Android, el roadmap deja de ser una pelea de opiniones y se convierte en una secuencia de apuestas controladas por evidencia.
 
 En la siguiente lección vamos a aterrizar esa evidencia en un tablero operativo de fiabilidad con métricas mínimas, alertas accionables y rituales de revisión que sí se pueden sostener sprint tras sprint.
+
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Calcular el error budget disponible para una semana con un SLO del 99.5% y determinar si el equipo puede lanzar un cambio de alto riesgo dado el estado actual del budget.
+
+**Pasos**:
+1. Considera una semana de 7 días (604 800 segundos) con SLO del 99.5%; calcula el tiempo de indisponibilidad permitido en segundos.
+2. Si en la semana actual ya se registraron 1 500 segundos de incidencias, calcula el budget restante y el porcentaje consumido.
+3. Escribe una función Kotlin `calculateRemainingBudgetPercent(sloPercent: Double, windowSeconds: Long, consumedSeconds: Long): Double` que encapsule este cálculo.
+4. Condición de éxito: la función devuelve un valor entre 0.0 y 1.0, y con los datos del ejercicio indica si se puede lanzar (budget restante > 50%) o no (budget restante ≤ 50%).
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+// Cálculo del error budget
+object ErrorBudgetCalculator {
+
+    /**
+     * Calcula el porcentaje de error budget restante.
+     *
+     * @param sloPercent     Objetivo de disponibilidad, p. ej. 0.995 para 99.5%
+     * @param windowSeconds  Ventana de tiempo en segundos (7 días = 604_800)
+     * @param consumedSeconds Segundos de incidencias ya consumidos en la ventana
+     * @return Porcentaje de budget restante entre 0.0 (agotado) y 1.0 (intacto)
+     */
+    fun calculateRemainingBudgetPercent(
+        sloPercent: Double,
+        windowSeconds: Long,
+        consumedSeconds: Long
+    ): Double {
+        val errorRate      = 1.0 - sloPercent            // 0.005 para 99.5%
+        val totalBudget    = windowSeconds * errorRate   // 604_800 * 0.005 = 3_024 s
+        val remaining      = (totalBudget - consumedSeconds).coerceAtLeast(0.0)
+        return remaining / totalBudget
+    }
+}
+
+// Ejemplo de uso con los datos del ejercicio
+fun main() {
+    val slo            = 0.995              // 99.5%
+    val window         = 604_800L           // 7 días en segundos
+    val consumed       = 1_500L             // segundos de incidencias ya registrados
+
+    val totalBudget    = window * (1.0 - slo)       // 3_024 s
+    val remaining      = totalBudget - consumed      // 1_524 s
+    val remainingPct   = ErrorBudgetCalculator.calculateRemainingBudgetPercent(slo, window, consumed)
+
+    println("Presupuesto total de error : %.0f s".format(totalBudget))
+    println("Presupuesto consumido      : $consumed s")
+    println("Presupuesto restante       : %.0f s (%.1f%%)".format(remaining, remainingPct * 100))
+
+    val canLaunch = remainingPct > 0.50
+    println("¿Se puede lanzar cambio de alto riesgo? ${if (canLaunch) "SÍ" else "NO"}")
+}
+// Salida esperada:
+// Presupuesto total de error : 3024 s
+// Presupuesto consumido      : 1500 s
+// Presupuesto restante       : 1524 s (50.4%)
+// ¿Se puede lanzar cambio de alto riesgo? SÍ  (con margen muy ajustado)
+```
+
+**Resultado esperado**: la función calcula correctamente que el budget restante es ≈ 50.4%, justo en el umbral; si los datos de consumo superan los 1 512 segundos, el resultado cambia a "NO" y el equipo debe frenar cambios de alto riesgo en ese flujo.
+
+</details>
+
 <!-- auto-gapfix:layered-mermaid -->
 ## Diagrama de arquitectura por capas
 
@@ -202,8 +270,8 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `==>` contrato o abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

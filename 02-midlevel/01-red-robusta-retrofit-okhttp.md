@@ -444,8 +444,76 @@ Finalmente, escribe test unitario del repositorio para validar que un error HTTP
 
 Si completas ese recorrido sin saltarte capas, ya tienes una base Midlevel real para evolucionar hacia estrategias offline-first más avanzadas en los siguientes módulos.
 
-<!-- semantica-flechas:auto -->
-## Semantica de flechas aplicada a esta arquitectura
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Agregar un timeout de 30 segundos y un interceptor de reintento automático al `OkHttpClient` existente, sin modificar los contratos de repositorio ni de Retrofit.
+
+**Pasos**:
+1. Crea una clase `RetryInterceptor(private val maxRetries: Int = 3)` que implemente `Interceptor` y reintente la llamada hasta `maxRetries` veces si la respuesta no es exitosa (código >= 500) o lanza excepción de red.
+2. Modifica `provideOkHttpClient` para usar `.connectTimeout(30, TimeUnit.SECONDS)`, `.readTimeout(30, TimeUnit.SECONDS)` y `.addInterceptor(RetryInterceptor())`.
+3. Verifica en un test unitario que `RetryInterceptor` llama a `chain.proceed(request)` exactamente 3 veces ante 3 respuestas 503 consecutivas.
+4. Condición de éxito: el test pasa y el `OkHttpClient` compila con los nuevos timeouts registrados.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+import okhttp3.Interceptor
+import okhttp3.OkHttpClient
+import okhttp3.Response
+import java.io.IOException
+import java.util.concurrent.TimeUnit
+
+// 1. Interceptor de reintento
+class RetryInterceptor(private val maxRetries: Int = 3) : Interceptor {
+
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val request = chain.request()
+        var lastResponse: Response? = null
+        var attempts = 0
+
+        while (attempts < maxRetries) {
+            attempts++
+            try {
+                val response = chain.proceed(request)
+                if (response.isSuccessful || attempts >= maxRetries) {
+                    return response
+                }
+                lastResponse?.close()
+                lastResponse = response
+            } catch (e: IOException) {
+                if (attempts >= maxRetries) throw e
+            }
+        }
+
+        return lastResponse ?: chain.proceed(request)
+    }
+}
+
+// 2. OkHttpClient con timeouts ampliados y reintento
+fun provideOkHttpClient(
+    authInterceptor: Interceptor,
+    loggingInterceptor: okhttp3.logging.HttpLoggingInterceptor
+): OkHttpClient {
+    return OkHttpClient.Builder()
+        .connectTimeout(30, TimeUnit.SECONDS)   // <-- ampliado
+        .readTimeout(30, TimeUnit.SECONDS)      // <-- ampliado
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .addInterceptor(RetryInterceptor(maxRetries = 3))  // <-- reintento
+        .addInterceptor(authInterceptor)
+        .addInterceptor(loggingInterceptor)
+        .build()
+}
+```
+
+**Resultado esperado**: en condiciones de red degradada (respuestas 503), la app reintenta automáticamente hasta 3 veces antes de propagar el error al repositorio; los timeouts ampliados evitan bloqueos en redes lentas.
+
+</details>
+
+<!-- semántica-flechas:auto -->
+## Semántica de flechas aplicada a esta arquitectura
 
 ```mermaid
 flowchart LR
@@ -473,10 +541,10 @@ flowchart LR
     IMPL --> LOCAL
 ```text
 
-Lectura semantica minima de este diagrama:
+Lectura semántica mínima de este diagrama:
 
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring y configuracion de ensamblado.
-3. `==>` dependencia contra contrato/abstraccion.
-4. `--o` salida/propagacion desde implementacion concreta.
+2. `-.->` wiring y configuración de ensamblado.
+3. `==>` dependencia contra contrato/abstracción.
+4. `--o` salida/propagación desde implementación concreta.
 

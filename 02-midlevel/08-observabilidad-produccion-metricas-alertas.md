@@ -217,6 +217,50 @@ Con este módulo ya no estás “esperando problemas”, estás diseñando cómo
 
 En el siguiente tramo del roadmap vamos a usar estas señales para guiar decisiones de arquitectura evolutiva y priorización técnica, conectando lo que medimos con cómo decidimos qué tocar primero en cada iteración.
 
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Definir una alerta accionable sobre fallos de sincronización y una métrica de latencia de sync que se pueda discutir en operación.
+
+**Pasos**:
+1. Elige una señal primaria, por ejemplo `sync_failed_total`.
+2. Define una segunda señal temporal, por ejemplo `sync_duration_ms`.
+3. Especifica umbral, ventana y acción esperada cuando la alerta dispare.
+4. Añade un ejemplo de metadata útil para diagnóstico (`operationId`, `taskCount`, `networkType`).
+5. Condición de éxito: otra persona del equipo podría leer tu alerta y saber qué mirar primero.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+data class SyncAlertDefinition(
+    val metricName: String,
+    val threshold: String,
+    val window: String,
+    val severity: String,
+    val firstAction: String
+)
+
+val failedSyncAlert = SyncAlertDefinition(
+    metricName = "sync_failed_total",
+    threshold = "> 5 errores",
+    window = "15m",
+    severity = "high",
+    firstAction = "Revisar correlación por operationId y últimas respuestas del backend"
+)
+
+val durationSlo = mapOf(
+    "metric" to "sync_duration_ms_p95",
+    "target" to "< 2000",
+    "window" to "24h"
+)
+```
+
+**Resultado esperado**: tu definición deja claro qué se mide, cuándo preocupa y cuál es el primer paso operativo.
+
+</details>
+
 <!-- auto-gapfix:layered-mermaid -->
 ## Diagrama de arquitectura por capas
 
@@ -273,8 +317,8 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `==>` contrato o abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

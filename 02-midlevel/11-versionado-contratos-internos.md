@@ -125,6 +125,45 @@ Ese cambio parece pequeño, pero en equipos reales marca diferencia entre escala
 Con este módulo ya puedes evolucionar contratos internos sin romper relaciones entre features. Acabas de añadir una capa de estabilidad que normalmente se echa de menos justo cuando el producto empieza a crecer de verdad.
 
 En el siguiente tramo vamos a aplicar esto al plano de navegación y deep links, para que la evolución de rutas también tenga compatibilidad y no se convierta en una fuente silenciosa de regresiones.
+
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Mantener dos versiones de un contrato interno durante una ventana de migración sin romper consumidores.
+
+**Pasos**:
+1. Define un contrato `TaskContractV1` con el campo `title`.
+2. Añade `TaskContractV2` con `title` y `priority`.
+3. Imagina una fecha de retirada de V1 y anótala en la documentación del contrato.
+4. Diseña un test de smoke que falle si V1 desaparece antes de tiempo.
+5. Condición de éxito: puedes evolucionar el contrato sin bloquear a todos los consumidores el mismo día.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+data class TaskContractV1(
+    val id: String,
+    val title: String
+)
+
+data class TaskContractV2(
+    val id: String,
+    val title: String,
+    val priority: String
+)
+
+@Test
+fun contractV1_remainsAvailableDuringMigrationWindow() {
+    val legacy = TaskContractV1(id = "1", title = "Revisar parte diario")
+    assertThat(legacy.title).isEqualTo("Revisar parte diario")
+}
+```
+
+**Resultado esperado**: la evolución a V2 no rompe a los consumidores de V1 mientras la ventana de migración siga abierta.
+
+</details>
 <!-- auto-gapfix:layered-mermaid -->
 ## Diagrama de arquitectura por capas
 
@@ -181,8 +220,8 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `==>` contrato o abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

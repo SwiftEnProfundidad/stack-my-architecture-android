@@ -99,8 +99,53 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Redactar tu plan personal de 90 días con 3 metas medibles y sus criterios de éxito.
+
+**Pasos**:
+1. Define 3 metas para los próximos 90 días. Cada meta debe ser específica y alcanzable en ese plazo (no "mejorar arquitectura", sino "refactorizar el módulo de autenticación para usar contratos versionados").
+2. Para cada meta, escribe: (a) qué vas a hacer exactamente, (b) cómo sabrás que lo lograste (criterio de éxito medible), (c) cuándo lo harás (semana o fecha aproximada).
+3. Distribuye las metas en tres bloques de 30 días: mes 1 de consolidación, mes 2 de aplicación y mes 3 de visibilidad.
+4. Añade un mecanismo de revisión: una fecha concreta en la que revisarás el progreso (por ejemplo, último viernes de cada mes).
+5. Condición de éxito: tienes 3 metas escritas con criterio medible, distribuidas en el tiempo y con una fecha de revisión concreta.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```markdown
+# Mi plan de 90 días · Android
+
+## Mes 1 (días 1-30): Consolidación
+**Meta**: Instrumentar un SLO en el flujo de sincronización offline de mi proyecto.
+- Qué: añadir telemetría de tasa de éxito de sincronización y configurar alerta cuando baje del 95 %.
+- Criterio de éxito: dashboard con datos reales durante 2 semanas sin intervención manual.
+- Cuándo: semana 3.
+
+## Mes 2 (días 31-60): Aplicación
+**Meta**: Separar el módulo monolítico `app` en al menos 2 bounded contexts con contratos explícitos.
+- Qué: crear módulos `feature-auth` y `feature-forms` con interfaces de contrato propias.
+- Criterio de éxito: ningún módulo feature importa clases internas de otro módulo feature.
+- Cuándo: semana 7.
+
+## Mes 3 (días 61-90): Visibilidad
+**Meta**: Publicar una entrada técnica (blog, hilo o charla interna) sobre la decisión de arquitectura más relevante que tomé.
+- Qué: redactar explicación de por qué usé contratos versionados y qué problema resolvió.
+- Criterio de éxito: publicado y compartido con al menos 10 personas del sector.
+- Cuándo: semana 12.
+
+## Revisión mensual
+Último viernes de cada mes: revisar progreso contra criterios y ajustar si es necesario.
+```
+
+**Resultado esperado**: El alumno tiene un plan concreto y accionable que puede empezar a ejecutar la semana siguiente sin necesidad de más planificación.
+
+</details>
+
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `==>` contrato o abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

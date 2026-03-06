@@ -180,6 +180,91 @@ Has llegado a un punto donde el roadmap da un salto de madurez: ya no solo const
 
 En el siguiente tramo del roadmap vamos a conectar este gate con medición de rendimiento real en CI usando Macrobenchmark y Baseline Profiles, para que no solo protejas corrección funcional, sino también experiencia de usuario bajo carga y tiempos de arranque.
 
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Añadir una regla de lint personalizada al build de Gradle que prohíba el uso directo de `System.currentTimeMillis()` en clases de repositorio para forzar el uso de un reloj inyectable.
+
+**Pasos**:
+1. Crea un `IssueRegistry` con una `Issue` cuyo `id = "DirectSystemClock"` y `severity = Severity.ERROR`.
+2. Implementa el `Detector` correspondiente que visite llamadas a `System.currentTimeMillis()` y reporte la issue con el mensaje `"Usa un reloj inyectable en lugar de System.currentTimeMillis()"`.
+3. Registra el detector como módulo de lint en `build.gradle.kts` del módulo que contiene los repositorios.
+4. Condición de éxito: al ejecutar `./gradlew lint`, el informe señala exactamente los archivos de repositorio donde se usa `System.currentTimeMillis()` directamente.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+// En el módulo :lint (módulo independiente de Java/Kotlin para reglas de lint)
+// Archivo: lint/src/main/java/com/tuempresa/lint/DirectSystemClockDetector.kt
+
+import com.android.tools.lint.client.api.IssueRegistry
+import com.android.tools.lint.client.api.Vendor
+import com.android.tools.lint.detector.api.Category
+import com.android.tools.lint.detector.api.Detector
+import com.android.tools.lint.detector.api.Implementation
+import com.android.tools.lint.detector.api.Issue
+import com.android.tools.lint.detector.api.JavaContext
+import com.android.tools.lint.detector.api.Scope
+import com.android.tools.lint.detector.api.Severity
+import com.intellij.psi.PsiMethod
+import org.jetbrains.uast.UCallExpression
+
+// 1. Detector de la regla
+class DirectSystemClockDetector : Detector(), Detector.UastScanner {
+
+    override fun getApplicableMethodNames(): List<String> = listOf("currentTimeMillis")
+
+    override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
+        val containingClass = method.containingClass?.qualifiedName ?: return
+        if (containingClass == "java.lang.System") {
+            context.report(
+                issue    = ISSUE,
+                scope    = node,
+                location = context.getLocation(node),
+                message  = "Usa un reloj inyectable en lugar de System.currentTimeMillis()"
+            )
+        }
+    }
+
+    companion object {
+        val ISSUE: Issue = Issue.create(
+            id          = "DirectSystemClock",
+            briefDescription = "Uso directo de System.currentTimeMillis()",
+            explanation = "Inyecta un reloj (Clock o () -> Long) para facilitar tests deterministas.",
+            category    = Category.CORRECTNESS,
+            priority    = 8,
+            severity    = Severity.ERROR,
+            implementation = Implementation(
+                DirectSystemClockDetector::class.java,
+                Scope.JAVA_FILE_SCOPE
+            )
+        )
+    }
+}
+
+// 2. Registro de issues
+class AppIssueRegistry : IssueRegistry() {
+    override val issues: List<Issue> = listOf(DirectSystemClockDetector.ISSUE)
+    override val api: Int = com.android.tools.lint.detector.api.CURRENT_API
+    override val vendor: Vendor = Vendor(vendorName = "StackMyArchitecture")
+}
+
+// 3. En build.gradle.kts del módulo de lint:
+// android {
+//     lint {
+//         checkDependencies = true
+//     }
+// }
+// En el módulo de repositorios añade la dependencia:
+// lintChecks(project(":lint"))
+```
+
+**Resultado esperado**: tras ejecutar `./gradlew lint`, el informe HTML o XML indica error `DirectSystemClock` en cada fichero de repositorio que llame a `System.currentTimeMillis()` directamente, bloqueando el build si `abortOnError = true`.
+
+</details>
+
 <!-- auto-gapfix:layered-mermaid -->
 ## Diagrama de arquitectura por capas
 
@@ -236,8 +321,8 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `==>` contrato o abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.
