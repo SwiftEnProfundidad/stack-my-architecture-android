@@ -14,6 +14,31 @@ La cuarta familia es evidencia operativa. Debe quedar trazabilidad de errores y 
 
 La quinta familia es evidencia de producto y publicación. Debe existir una versión candidata para distribución controlada, notas de release comprensibles y una justificación clara del estado de salida.
 
+## Mínimo obligatorio cuantificable
+
+Para dar este bloque por completo, el paquete debe incluir al menos:
+
+1. `>= 1` ejecución CI verde con tests automáticos.
+2. `>= 1` reporte de pruebas instrumentadas/UI en flujo crítico.
+3. `>= 1` medición de rendimiento reproducible (macrobenchmark o equivalente).
+4. `>= 1` release note con riesgos y plan de rollback.
+5. `>= 3` decisiones técnicas documentadas (ADRs o equivalente).
+
+## Formato recomendado de entrega
+
+1. Carpeta `evidence/` con:
+- `testing/`, `performance/`, `operations/`, `release/`, `architecture/`.
+
+2. Documento índice `EVIDENCE-INDEX.md` con:
+- evidencia,
+- fecha,
+- fuente,
+- conclusión técnica.
+
+## Criterio de rechazo inmediato
+
+Si la evidencia existe pero no es verificable por terceros (capturas sueltas sin contexto, enlaces rotos, métricas sin método), el paquete se considera incompleto.
+
 ```kotlin
 package com.stackmyarchitecture.finalproject.evidence
 

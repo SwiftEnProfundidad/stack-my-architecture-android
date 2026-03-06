@@ -703,13 +703,14 @@ def build_nav(files_content):
 
     sections = {
         "00-informe": "Informe fundacional",
-        "00-nivel-cero": "Nivel Cero: Fundamentos",
-        "01-junior": "Nivel Junior",
-        "02-midlevel": "Nivel Midlevel",
-        "03-senior": "Nivel Senior",
-        "04-maestria": "Nivel Maestria",
-        "05-proyecto-final": "Proyecto Final",
-        "anexos": "Anexos",
+        "00-core-mobile": "ETAPA 0: CORE MOBILE",
+        "00-nivel-cero": "ETAPA 0: NIVEL CERO",
+        "01-junior": "ETAPA 1: JUNIOR",
+        "02-midlevel": "ETAPA 2: MIDLEVEL",
+        "03-senior": "ETAPA 3: SENIOR",
+        "04-maestria": "ETAPA 5: MAESTRIA",
+        "05-proyecto-final": "ETAPA 6: PROYECTO FINAL",
+        "anexos": "ANEXOS",
     }
 
     current_section = ""
@@ -781,6 +782,41 @@ def build_html():
 <meta name="darkreader-lock">
 <meta name="course-id" content="stack-my-architecture-android">
 <title>Stack: My Architecture Android</title>
+<script>
+(function () {{
+  try {{
+    var host = String(window.location.hostname || '').toLowerCase();
+    var local172 = host.match(/^172\\.(\\d{{1,3}})\\.\\d{{1,3}}\\.\\d{{1,3}}$/);
+    var isLocal = window.location.protocol === 'file:' ||
+      host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '0.0.0.0' ||
+      host.endsWith('.local') ||
+      /^10\\.\\d{{1,3}}\\.\\d{{1,3}}\\.\\d{{1,3}}$/.test(host) ||
+      /^192\\.168\\.\\d{{1,3}}\\.\\d{{1,3}}$/.test(host) ||
+      (local172 && Number(local172[1]) >= 16 && Number(local172[1]) <= 31);
+    if (isLocal) return;
+
+    var user = JSON.parse(localStorage.getItem('sma:auth:user:v1') || 'null');
+    var session = JSON.parse(localStorage.getItem('sma:auth:session:v1') || 'null');
+    var isValid = !!(user && user.id && session && session.accessToken);
+    if (isValid && session.expiresAt) {{
+      var expiresAt = Date.parse(String(session.expiresAt));
+      if (Number.isFinite(expiresAt) && expiresAt <= Date.now()) isValid = false;
+    }}
+    if (isValid) return;
+
+    localStorage.removeItem('sma:auth:user:v1');
+    localStorage.removeItem('sma:auth:session:v1');
+    localStorage.removeItem('sma:cloud:profile:v1');
+    var next = window.location.pathname + window.location.search + window.location.hash;
+    var login = new URL('/auth/login.html', window.location.origin);
+    login.searchParams.set('next', next);
+    window.location.replace(login.pathname + login.search + login.hash);
+  }} catch (_error) {{
+    var next = window.location.pathname + window.location.search + window.location.hash;
+    window.location.replace('/auth/login.html?next=' + encodeURIComponent(next));
+  }}
+}})();
+</script>
 <link rel="stylesheet" href="assets/study-ux.css?v=__ASSET_VERSION__">
 <link rel="stylesheet" href="assets/course-switcher.css?v=__ASSET_VERSION__">
 <link rel="stylesheet" href="assets/assistant-panel.css?v=__ASSET_VERSION__">
