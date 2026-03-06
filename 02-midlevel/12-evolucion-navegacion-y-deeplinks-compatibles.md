@@ -121,6 +121,48 @@ Y, sobre todo, mantienes coherencia con la filosofía de todo este bloque midlev
 Con este módulo cierras una parte clave de arquitectura evolutiva en Android: contratos entre features, dependencias gobernadas y navegación compatible en el tiempo. Ese conjunto ya te coloca en un nivel de diseño muy superior al típico “funciona en mi build”.
 
 El siguiente salto natural es pasar al bloque Senior para endurecer operaciones a escala: estrategia de releases, rollback seguro y gestión de incidentes con tiempos de respuesta reales.
+
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Garantizar compatibilidad temporal entre una ruta nueva de navegación y un deep link legado.
+
+**Pasos**:
+1. Define una ruta nueva, por ejemplo `tasks/detail/{taskId}`.
+2. Mantén un deep link legado, por ejemplo `ruralgo://task/{taskId}`.
+3. Implementa un parser que convierta ambos formatos a un destino tipado común.
+4. Añade un test que valide ambos caminos.
+5. Condición de éxito: tanto la ruta nueva como el deep link antiguo abren el mismo detalle sin lógica duplicada.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+sealed interface AppDestination {
+    data class TaskDetail(val taskId: String) : AppDestination
+}
+
+fun parseTaskDestination(raw: String): AppDestination? = when {
+    raw.startsWith("ruralgo://task/") ->
+        AppDestination.TaskDetail(raw.removePrefix("ruralgo://task/"))
+    raw.startsWith("tasks/detail/") ->
+        AppDestination.TaskDetail(raw.removePrefix("tasks/detail/"))
+    else -> null
+}
+
+@Test
+fun parser_acceptsNewRouteAndLegacyDeepLink() {
+    assertThat(parseTaskDestination("ruralgo://task/42"))
+        .isEqualTo(AppDestination.TaskDetail("42"))
+    assertThat(parseTaskDestination("tasks/detail/42"))
+        .isEqualTo(AppDestination.TaskDetail("42"))
+}
+```
+
+**Resultado esperado**: la compatibilidad queda automatizada y una limpieza accidental de una ruta importante hace fallar el test antes del release.
+
+</details>
 <!-- auto-gapfix:layered-mermaid -->
 ## Diagrama de arquitectura por capas
 
@@ -153,7 +195,7 @@ flowchart LR
 
   VM --> UC
   UC --> ENT
-  UC -.o PORT
+  UC ==> PORT
   BOOT -.-> PORT
   BOOT -.-> API
   BOOT -.-> STORE
@@ -177,8 +219,8 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `-.o` dependencia contra contrato/abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

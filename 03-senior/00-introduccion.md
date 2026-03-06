@@ -92,7 +92,7 @@ flowchart LR
 
   VM --> UC
   UC --> ENT
-  UC -.o PORT
+  UC ==> PORT
   BOOT -.-> PORT
   BOOT -.-> API
   BOOT -.-> STORE
@@ -116,8 +116,42 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Identificar un riesgo de fiabilidad real en tu proyecto Android y proponer una métrica concreta para hacerle seguimiento.
+
+**Pasos**:
+1. Elige un flujo crítico de tu proyecto (por ejemplo: sincronización offline, autenticación o carga de datos remotos).
+2. Piensa en qué podría fallar en ese flujo bajo presión real: red lenta, proceso matado por el sistema, respuesta inesperada del servidor, etc.
+3. Escribe el riesgo en una frase: "Si X ocurre, el flujo Y falla de esta forma Z".
+4. Define una métrica observable que detectaría ese riesgo antes de que llegue al usuario: tasa de error, latencia P95, tasa de reintento, tiempo sin sincronización, etc.
+5. Condición de éxito: tienes un riesgo nombrado con precisión y una métrica que puedes instrumentar hoy en el proyecto.
+
+<details>
+<summary>Solución de referencia</summary>
+
+**Riesgo identificado**:
+"Si el worker de sincronización se cancela por restricción de batería, el flujo de envío de formularios offline falla silenciosamente sin notificar al usuario."
+
+**Métrica propuesta**:
+```kotlin
+// En SyncWorker.doWork(), registrar intentos fallidos por restricción del sistema
+MigrationTelemetry.trackFallback(
+    contractName = "SyncWorker",
+    reason = "SYSTEM_STOPPED_WORKER"
+)
+```
+
+Métrica de seguimiento: `sync_worker_cancelled_rate` = (cancelaciones por sistema / total ejecuciones) en ventana de 24 h.
+
+**Resultado esperado**: El alumno tiene documentado al menos un riesgo real con su métrica asociada, y puede decidir si instrumentarlo en la siguiente sesión de trabajo.
+
+</details>
+
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `-.o` dependencia contra contrato/abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

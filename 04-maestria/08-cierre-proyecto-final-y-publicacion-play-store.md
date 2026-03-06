@@ -104,7 +104,7 @@ flowchart LR
 
   VM --> UC
   UC --> ENT
-  UC -.o PORT
+  UC ==> PORT
   BOOT -.-> PORT
   BOOT -.-> API
   BOOT -.-> STORE
@@ -128,8 +128,42 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Completar los 5 pasos previos al upload del APK/AAB en Play Console antes de subir la app.
+
+**Pasos**:
+1. **Firma del artefacto**: genera o verifica el keystore de release y confirma que el `buildType release` usa `signingConfig` correcto. Compila con `./gradlew bundleRelease` y verifica que el AAB se genera sin errores.
+2. **Minificación verificada**: lanza la app en modo release sobre un dispositivo o emulador y navega por los 3 flujos críticos. Confirma que nada se rompe por reglas de ProGuard incorrectas.
+3. **Metadatos de Play Console listos**: prepara título (≤ 50 caracteres), descripción corta (≤ 80 caracteres), descripción larga (≤ 4000 caracteres), capturas de pantalla (mínimo 2 por tipo de dispositivo) y política de privacidad con URL válida.
+4. **Clasificación de contenido completada**: responde el cuestionario de contenido en Play Console y guarda el certificado generado.
+5. **Despliegue gradual configurado**: en la sección de lanzamiento, selecciona "Lanzamiento gradual" al 10 % antes de expandir al 100 %.
+6. Condición de éxito: todos los puntos anteriores tienen marca de completado y Play Console no muestra ningún error de validación en la pantalla de revisión previa al envío.
+
+<details>
+<summary>Solución de referencia</summary>
+
+**Lista de verificación ejecutable**:
+
+```
+[ ] AAB generado con ./gradlew bundleRelease sin errores de compilación
+[ ] App firmada con keystore de producción (no el debug.keystore)
+[ ] Flujos críticos probados en build release: login, flujo principal, cierre de sesión
+[ ] versionCode incrementado respecto al último publicado
+[ ] Ficha de Play Console completa: título, descripción corta, descripción larga, capturas
+[ ] Política de privacidad accesible en URL pública
+[ ] Cuestionario de contenido respondido y certificado guardado
+[ ] Lanzamiento configurado como gradual al 10 %
+```
+
+**Resultado esperado**: El alumno tiene los 8 ítems marcados y puede subir el AAB a Play Console con confianza, sabiendo que el proceso de revisión no va a rechazar la app por información incompleta o artefacto mal firmado.
+
+</details>
+
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `-.o` dependencia contra contrato/abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

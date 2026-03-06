@@ -64,6 +64,94 @@ Cuando ese equilibrio está bien llevado, pasa algo interesante. El equipo no so
 
 Con esta lección cerramos la parte de Maestría enfocada en sostenibilidad operacional. Si aplicas este enfoque, tu app no dependerá de momentos de brillantez puntual para mantenerse viva. Dependerá de un sistema de decisiones que funciona incluso cuando hay presión, cambios y crecimiento continuo.
 
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Crear un backlog priorizado de deuda técnica con al menos cuatro ítems, ordenados por `riskScore`, que sea presentable en un planning de sprint.
+
+**Pasos**:
+1. Identifica cuatro deudas técnicas reales o verosímiles de un proyecto Android (puedes basarte en el proyecto del curso): faltan tests, acoplamiento directo, sin observabilidad en un módulo, migración de librería pendiente.
+2. Modela cada deuda como `TechnicalDebtItem` con `id`, `context`, `riskScore`, `impactArea` y `mitigationPlan`.
+3. Ordena la lista por `riskScore` descendente y aplica `DebtPrioritizationPolicy` para marcar cuáles requieren atención inmediata (score ≥ 8).
+4. Condición de éxito: el backlog puede ser leído en una reunión de planning en menos de 5 minutos; los ítems con `shouldPrioritizeNow = true` tienen un plan de mitigación ejecutable en 1–3 días.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+data class TechnicalDebtItem(
+    val id: String,
+    val context: String,
+    val riskScore: Int,
+    val impactArea: String,
+    val mitigationPlan: String
+)
+
+class DebtPrioritizationPolicy {
+    fun shouldPrioritizeNow(item: TechnicalDebtItem): Boolean = item.riskScore >= 8
+}
+
+fun main() {
+    val policy = DebtPrioritizationPolicy()
+
+    // 2. Cuatro deudas técnicas modeladas
+    val backlog = listOf(
+        TechnicalDebtItem(
+            id             = "DEBT-001",
+            context        = "ConflictResolver sin tests; 2 bugs en producción por conflictos de timestamp",
+            riskScore      = 9,
+            impactArea     = "Integridad de datos en sincronización offline-first",
+            mitigationPlan = "Añadir 4 tests unitarios para ConflictResolver cubriendo KeepLocal, " +
+                             "KeepRemote, ManualReview y caso nulo. ETA: 1 día."
+        ),
+        TechnicalDebtItem(
+            id             = "DEBT-002",
+            context        = "TasksViewModel depende de TasksRepositoryImpl directamente en un flujo legado",
+            riskScore      = 8,
+            impactArea     = "Testabilidad y separación de capas en feature Tasks",
+            mitigationPlan = "Sustituir referencia directa por interfaz TasksRepository. " +
+                             "Actualizar módulo Hilt. ETA: 2 días."
+        ),
+        TechnicalDebtItem(
+            id             = "DEBT-003",
+            context        = "Módulo de catálogo sin observabilidad: ningún log en operaciones de red",
+            riskScore      = 6,
+            impactArea     = "Diagnóstico y trazabilidad en CatalogRemoteDataSource",
+            mitigationPlan = "Inyectar AppLogger e instrumentar fetchCatalog() con operationId. ETA: 1 día."
+        ),
+        TechnicalDebtItem(
+            id             = "DEBT-004",
+            context        = "Librería Gson usada en módulo de red; migración pendiente a Moshi/Kotlinx",
+            riskScore      = 4,
+            impactArea     = "Mantenibilidad y alineación con estándar del proyecto",
+            mitigationPlan = "Migrar DTOs de catálogo a anotaciones Moshi. Validar en staging. ETA: 3 días."
+        )
+    ).sortedByDescending { it.riskScore }
+
+    // 3. Backlog priorizado con marcas de urgencia
+    println("=== Backlog de Deuda Técnica ===\n")
+    backlog.forEach { item ->
+        val urgente = if (policy.shouldPrioritizeNow(item)) "🔴 URGENTE" else "🟡 PLANIFICABLE"
+        println("[$urgente] ${item.id} (riskScore=${item.riskScore})")
+        println("  Contexto   : ${item.context}")
+        println("  Área       : ${item.impactArea}")
+        println("  Plan       : ${item.mitigationPlan}")
+        println()
+    }
+}
+
+// Salida esperada (ordenada por riskScore desc):
+// [🔴 URGENTE] DEBT-001 (riskScore=9) - ConflictResolver sin tests
+// [🔴 URGENTE] DEBT-002 (riskScore=8) - Acoplamiento directo en ViewModel
+// [🟡 PLANIFICABLE] DEBT-003 (riskScore=6) - Sin observabilidad en catálogo
+// [🟡 PLANIFICABLE] DEBT-004 (riskScore=4) - Migración de Gson a Moshi
+```
+
+**Resultado esperado**: el backlog ordenado identifica visualmente qué deudas requieren atención inmediata (score ≥ 8) y cuáles pueden planificarse en sprints futuros; el plan de mitigación de cada deuda urgente es lo suficientemente concreto para asignarse como tarea en el sprint actual.
+
+</details>
+
 <!-- auto-gapfix:layered-mermaid -->
 ## Diagrama de arquitectura por capas
 
@@ -96,7 +184,7 @@ flowchart LR
 
   VM --> UC
   UC --> ENT
-  UC -.o PORT
+  UC ==> PORT
   BOOT -.-> PORT
   BOOT -.-> API
   BOOT -.-> STORE
@@ -120,8 +208,8 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `-.o` dependencia contra contrato/abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

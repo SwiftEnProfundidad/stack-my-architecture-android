@@ -68,7 +68,7 @@ flowchart LR
 
   VM --> UC
   UC --> ENT
-  UC -.o PORT
+  UC ==> PORT
   BOOT -.-> PORT
   BOOT -.-> API
   BOOT -.-> STORE
@@ -92,8 +92,42 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Autoevaluar en escala 1-5 cada competencia del mapa de carrera Android.
+
+**Pasos**:
+1. Puntúa cada competencia en una escala honesta de 1 a 5: 1 = no lo conozco, 2 = lo entiendo pero no lo aplico, 3 = lo aplico con ayuda, 4 = lo aplico de forma autónoma, 5 = lo enseño y lo defiendo bajo presión.
+2. Rellena la tabla para las cuatro dimensiones del modelo `CareerSignal`: profundidad técnica, pensamiento sistémico, fiabilidad de entrega y mentoría/impacto en el equipo.
+3. Para las competencias con puntuación 1 o 2, escribe una acción concreta que puedas hacer esta semana para subirla un punto.
+4. Calcula tu media por dimensión y por global.
+5. Condición de éxito: tienes la tabla completa con puntuaciones honestas, al menos una acción concreta por cada dimensión con puntuación ≤ 2, y un número global que puedes revisar en 90 días para medir progreso real.
+
+<details>
+<summary>Solución de referencia</summary>
+
+| Dimensión | Competencia específica | Puntuación (1-5) | Acción si ≤ 2 |
+|---|---|---|---|
+| Profundidad técnica | Arquitectura multi-módulo con contratos | 3 | — |
+| Profundidad técnica | Testing: unitario + integración + UI | 2 | Esta semana: escribir 3 tests de integración para el DAO principal |
+| Profundidad técnica | Rendimiento: benchmark + baseline profile | 2 | Esta semana: ejecutar benchmark existente y leer el resultado |
+| Pensamiento sistémico | Bounded contexts y ownership | 3 | — |
+| Pensamiento sistémico | Migraciones sin bloqueo | 2 | Esta semana: diseñar la migración Room del ejercicio de lección 04 |
+| Fiabilidad de entrega | SLOs y error budgets | 2 | Esta semana: definir 1 SLO para el flujo de sincronización |
+| Fiabilidad de entrega | Releases graduales y rollback | 3 | — |
+| Mentoría / impacto | Revisión de PRs con criterio explicado | 4 | — |
+| Mentoría / impacto | Defensa técnica con datos ante no técnicos | 2 | Esta semana: escribir 1 párrafo explicando una decisión de arquitectura sin usar jerga |
+
+**Media por dimensión**: Técnica: 2.3 · Sistémica: 2.5 · Fiabilidad: 2.5 · Mentoría: 3.0 · **Global: 2.6/5**
+
+**Resultado esperado**: El alumno tiene un mapa de carrera personalizado con evidencia honesta de su estado actual y acciones concretas para la semana siguiente, no una valoración abstracta.
+
+</details>
+
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `-.o` dependencia contra contrato/abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

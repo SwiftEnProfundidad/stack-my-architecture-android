@@ -72,7 +72,7 @@ flowchart LR
 
   VM --> UC
   UC --> ENT
-  UC -.o PORT
+  UC ==> PORT
   BOOT -.-> PORT
   BOOT -.-> API
   BOOT -.-> STORE
@@ -96,8 +96,36 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Identificar 1 conferencia, 1 proyecto open source y 1 skill que quieres dominar en el próximo año.
+
+**Pasos**:
+1. **Conferencia**: busca conferencias de Android o desarrollo móvil del próximo año (DroidCon, Android Makers, Google I/O, KotlinConf u otras locales). Elige una y anota: nombre, fecha aproximada, y qué talk o tema específico te interesaría presentar o aprender.
+2. **Proyecto OSS**: identifica un proyecto open source relacionado con Android en el que podrías contribuir de forma realista (no tiene que ser un proyecto enorme: puede ser una librería pequeña, un plugin de Gradle o un ejemplo de arquitectura). Anota: nombre del proyecto, enlace, y qué tipo de contribución harías (bug fix, documentación, nueva feature, test).
+3. **Skill**: elige una habilidad técnica o de comunicación que sabes que necesitas desarrollar. Sé específico: no "mejorar en Kotlin" sino "dominar coroutines avanzadas: Channel, SharedFlow y manejo de errores en flujos concurrentes". Anota cómo la medirías al final del año.
+4. Escribe los tres en un párrafo corto conectando por qué cada uno es relevante para donde quieres estar en 12 meses.
+5. Condición de éxito: tienes los tres ítems concretos y el párrafo de conexión escrito, listo para revisarlo en 6 meses.
+
+<details>
+<summary>Solución de referencia</summary>
+
+**Conferencia**: DroidCon Madrid (o Berlin) — me interesa el track de arquitectura y quiero presentar un lightning talk sobre contratos versionados en proyectos multi-módulo.
+
+**Proyecto OSS**: contribuir a [Molecule](https://github.com/cashapp/molecule) — añadir un ejemplo de integración con ViewModel en la documentación oficial, porque actualmente falta ese caso de uso.
+
+**Skill**: dominar `StateFlow` y `SharedFlow` en escenarios de UI con múltiples colectores y errores de red. Lo mediré cuando pueda implementar un `ViewModel` con `StateFlow` + `combine` sin consultar documentación y explicarlo a otra persona en 10 minutos.
+
+**Párrafo de conexión**: "La conferencia me dará visibilidad y me obligará a sintetizar lo aprendido en el curso. La contribución OSS me mantendrá en contacto con código de alta calidad y con la comunidad. El skill de flows me da la base técnica que todavía me falta para escribir UIs reactivas robustas. Los tres juntos componen un año de crecimiento visible, no solo interno."
+
+**Resultado esperado**: El alumno tiene una hoja de ruta profesional del año con compromisos concretos, no solo intenciones vagas.
+
+</details>
+
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `-.o` dependencia contra contrato/abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

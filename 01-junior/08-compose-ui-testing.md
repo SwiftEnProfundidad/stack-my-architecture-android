@@ -286,7 +286,102 @@ La tercera debe validar que estado error muestra botón de reintento y que pulsa
 
 Después, cambia los textos visibles de la UI y confirma que tus pruebas críticas siguen pasando gracias a `testTag`.
 
-Si consigues eso, ya no estás “mirando pantallas a ojo”. Estás construyendo calidad verificable.
+Si consigues eso, ya no estás "mirando pantallas a ojo". Estás construyendo calidad verificable.
+
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Escribir un test de Compose que verifique que el texto "Sin tareas disponibles" aparece en pantalla cuando la lista de tareas está vacía.
+
+**Pasos**:
+1. Crea un composable `TasksEmptyContent()` que muestre el texto "Sin tareas disponibles".
+2. En la clase de test `TasksEmptyContentTest`, define `@get:Rule val composeTestRule = createAndroidComposeRule<ComponentActivity>()`.
+3. Escribe el test `whenEmptyList_thenShowsEmptyMessage` que monte `TasksEmptyContent()` con `setContent` y verifique con `assertIsDisplayed()`.
+4. Condición de éxito: el test pasa en verde sin necesidad de un emulador real completo usando `ComponentActivity` como host.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+import androidx.activity.ComponentActivity
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithText
+import androidx.test.ext.junit4.runners.AndroidJUnit4
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+// 1. Composable a probar
+@Composable
+fun TasksEmptyContent() {
+    Text(text = "Sin tareas disponibles")
+}
+
+// 2 y 3. Test de UI
+@RunWith(AndroidJUnit4::class)
+class TasksEmptyContentTest {
+
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<ComponentActivity>()
+
+    @Test
+    fun whenEmptyList_thenShowsEmptyMessage() {
+        // Montar la UI bajo prueba
+        composeTestRule.setContent {
+            TasksEmptyContent()
+        }
+
+        // Verificar que el texto es visible
+        composeTestRule
+            .onNodeWithText("Sin tareas disponibles")
+            .assertIsDisplayed()
+    }
+}
+```
+
+**Resultado esperado**: el test se ejecuta en verde; si cambias el texto del composable a algo distinto de "Sin tareas disponibles", el test falla con un mensaje claro de nodo no encontrado.
+
+</details>
+
+<!-- semántica-flechas:auto -->
+## Semántica de flechas aplicada a esta arquitectura
+
+```mermaid
+flowchart LR
+    subgraph APP["App module"]
+        APPROOT["AppRoot + Hilt"]
+        DI["Dependency graph"]
+    end
+
+    subgraph FEATURE["Feature module"]
+        UI["FeatureScreen"]
+        VM["FeatureViewModel"]
+        PORT["FeaturePort (interface)"]
+    end
+
+    subgraph DATA["Data/Infra module"]
+        IMPL["FeatureAdapterImpl"]
+        LOCAL["LocalDataSource"]
+    end
+
+    APPROOT -.-> DI
+    DI -.-> IMPL
+    UI --> VM
+    VM ==> PORT
+    IMPL --o PORT
+    IMPL --> LOCAL
+```text
+
+Lectura semántica mínima de este diagrama:
+
+1. `-->` dependencia directa en runtime.
+2. `-.->` wiring y configuración de ensamblado.
+3. `==>` dependencia contra contrato/abstracción.
+4. `--o` salida/propagación desde implementación concreta.
 
 ## Semantica de flechas aplicada a esta arquitectura
 

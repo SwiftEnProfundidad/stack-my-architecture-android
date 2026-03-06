@@ -1,182 +1,61 @@
-# Glosario base
+# Glosario Android
 
-## Término 01
-- Término: Algoritmo
-- Definición muy simple: Lista ordenada de pasos para resolver un problema.
-- Ejemplo real: Pasos para preparar la mochila.
-- Error común asociado: Poner pasos en desorden.
+Términos clave del curso Android, ordenados para que el alumno pueda volver a la primera lección donde aparece cada concepto importante.
 
-## Término 02
-- Término: Programa
-- Definición muy simple: Instrucciones que entiende un dispositivo.
-- Ejemplo real: Una app de notas.
-- Error común asociado: Pensar que programa y app no son lo mismo.
+---
 
-## Término 03
-- Término: Variable
-- Definición muy simple: Caja con nombre para guardar un dato.
-- Ejemplo real: `edad = 14`.
-- Error común asociado: Cambiar el tipo de dato sin control.
+| Término | Definición | Primera aparición |
+|---------|-----------|-------------------|
+| **AGP** | Android Gradle Plugin. Conecta Gradle con el toolchain Android y define buena parte del proceso de build. | `01-junior/00-setup-junior.md` |
+| **Baseline Profile** | Perfil de rendimiento que ayuda a acelerar arranque y rutas críticas en producción. | `02-midlevel/07-performance-ci-macrobenchmark-baselineprofiles.md` |
+| **Bounded Context** | Límite semántico y organizativo donde un modelo tiene significado preciso y ownership claro. | `04-maestria/02-bounded-contexts-y-ownership-tecnico.md` |
+| **CI** | Integración continua. Pipeline automático que valida calidad antes de mergear o publicar. | `02-midlevel/06-quality-gates-ci-offline-sync.md` |
+| **Compose** | Toolkit declarativo moderno para construir UI en Android. | `00-nivel-cero/09-primera-app-compose.md` |
+| **Composable** | Función anotada con `@Composable` que describe una parte de la interfaz. | `00-nivel-cero/09-primera-app-compose.md` |
+| **Composition Root** | Punto donde se ensamblan dependencias y wiring de una feature o de toda la app. | `00-core-mobile/10-plantillas.md` |
+| **Contrato** | Acuerdo explícito entre módulos, features o capas sobre qué se expone y cómo evoluciona. | `00-core-mobile/07-apis-contratos-versionado.md` |
+| **Coroutines** | Modelo de concurrencia de Kotlin para trabajo asíncrono estructurado. | `01-junior/00-setup-junior.md` |
+| **DAO** | Data Access Object. Interfaz que encapsula acceso a base de datos en Room. | `01-junior/05-room-offline-first.md` |
+| **DataStore** | Persistencia ligera para preferencias o estado simple, no para datos complejos de negocio. | `01-junior/06-datastore-estado-ligero.md` |
+| **Deep Link** | Ruta externa que abre una pantalla concreta de la app. | `02-midlevel/12-evolucion-navegacion-y-deeplinks-compatibles.md` |
+| **Dependency governance** | Reglas de entrada, aprobación y mantenimiento de dependencias para evitar caos estructural. | `00-core-mobile/09-dependency-governance-supply-chain.md` |
+| **DTO** | Objeto de transporte de datos, separado del modelo de dominio. | `02-midlevel/01-red-robusta-retrofit-okhttp.md` |
+| **Entidad** | Modelo con identidad propia que persiste en el tiempo. | `00-core-mobile/02-invariantes-y-contratos.md` |
+| **Error budget** | Presupuesto de fallos aceptable antes de priorizar estabilidad sobre nuevas features. | `03-senior/03-slos-error-budgets-priorizacion-fiabilidad.md` |
+| **Feature flag** | Interruptor configurable para activar o desactivar comportamiento sin redeploy completo. | `00-core-mobile/06-release-rollback-flags.md` |
+| **Feature-First** | Organización vertical del código por capacidades completas del producto. | `01-junior/01-arquitectura-android-recomendada.md` |
+| **Flow** | Stream asíncrono de Kotlin para emitir valores en el tiempo. | `01-junior/01-arquitectura-android-recomendada.md` |
+| **Gradle** | Sistema de build que compila, empaqueta y automatiza tareas del proyecto. | `01-junior/00-setup-junior.md` |
+| **Hilt** | Solución de inyección de dependencias para Android basada en Dagger. | `01-junior/04-hilt-integracion-inicial.md` |
+| **Invariante** | Regla que siempre debe cumplirse dentro del dominio o del contrato de una capa. | `00-core-mobile/02-invariantes-y-contratos.md` |
+| **JDK** | Java Development Kit usado por Gradle y Android Studio para compilar. | `01-junior/00-setup-junior.md` |
+| **Kotlin** | Lenguaje principal del stack Android moderno del curso. | `00-nivel-cero/03-primer-kotlin.md` |
+| **Macrobenchmark** | Medición automatizada de rendimiento a nivel de app o de flujos críticos. | `02-midlevel/07-performance-ci-macrobenchmark-baselineprofiles.md` |
+| **Métrica accionable** | Señal que sirve para decidir, no solo para decorar dashboards. | `02-midlevel/08-observabilidad-produccion-metricas-alertas.md` |
+| **Modulo compartido** | Módulo intermedio usado para exponer contratos o kernel común sin acoplar features entre sí. | `02-midlevel/10-gobernanza-dependencias-entre-features.md` |
+| **Navigation Compose** | Librería de navegación moderna para Compose. | `01-junior/03-navegacion-moderna-navigation-compose.md` |
+| **Offline-first** | Enfoque en el que la app sigue siendo útil con mala red o sin red. | `01-junior/05-room-offline-first.md` |
+| **Observabilidad** | Conjunto de logs, métricas y trazas útiles para entender qué está pasando en runtime. | `02-midlevel/04-observabilidad-y-diagnostico.md` |
+| **Ownership** | Responsabilidad técnica clara sobre un bounded context, módulo o contrato. | `04-maestria/02-bounded-contexts-y-ownership-tecnico.md` |
+| **Quality gate** | Validación automática que bloquea promoción de cambios inseguros. | `02-midlevel/06-quality-gates-ci-offline-sync.md` |
+| **Repositorio** | Capa que coordina fuentes de datos y expone operaciones con semántica de dominio. | `01-junior/02-feature-base-practica.md` |
+| **Retrofit** | Cliente HTTP tipado habitual en Android para consumir APIs. | `02-midlevel/01-red-robusta-retrofit-okhttp.md` |
+| **Rollback** | Estrategia para volver atrás o mitigar rápido un cambio peligroso. | `03-senior/01-release-strategy-y-rollback-seguro.md` |
+| **Room** | Capa de persistencia estructurada sobre SQLite para Android. | `01-junior/05-room-offline-first.md` |
+| **Runbook** | Procedimiento operativo para responder a incidencias o degradaciones. | `03-senior/02-incident-response-y-runbooks-operativos.md` |
+| **SLO** | Objetivo medible de fiabilidad o rendimiento. | `03-senior/03-slos-error-budgets-priorizacion-fiabilidad.md` |
+| **Sync state** | Estado que indica si un dato está pendiente, sincronizado o en error respecto al backend. | `02-midlevel/02-offline-first-sincronizacion.md` |
+| **Task / coroutine estructurada** | Trabajo asíncrono que vive dentro de una jerarquía controlada y cancelable. | `01-junior/00-setup-junior.md` |
+| **Test de integración** | Test que valida colaboración real entre varios componentes. | `02-midlevel/05-pruebas-de-integracion-offline-sync.md` |
+| **UDF** | Unidirectional Data Flow: eventos suben, estado baja. | `01-junior/01-arquitectura-android-recomendada.md` |
+| **Use case** | Operación de aplicación que coordina reglas y dependencias para cumplir una intención concreta. | `00-core-mobile/10-plantillas.md` |
+| **ViewModel** | Clase que gestiona estado de pantalla y lógica de presentación desacoplada de la UI. | `01-junior/01-arquitectura-android-recomendada.md` |
+| **WorkManager** | Framework para trabajo diferido y persistente que debe sobrevivir a cierres o reinicios. | `01-junior/07-workmanager-tareas-persistentes.md` |
 
-## Término 04
-- Término: Tipo de dato
-- Definición muy simple: La clase de información que guardas.
-- Ejemplo real: número, texto, verdadero/falso.
-- Error común asociado: Mezclar texto con número sin convertir.
+---
 
-## Término 05
-- Término: Condición
-- Definición muy simple: Decisión basada en una pregunta.
-- Ejemplo real: Si llueve, llevar paraguas.
-- Error común asociado: No definir qué pasa en el caso contrario.
+## Cómo usar este glosario
 
-## Término 06
-- Término: Bucle
-- Definición muy simple: Repetir una acción varias veces.
-- Ejemplo real: Revisar 10 tareas una por una.
-- Error común asociado: Crear un bucle infinito.
-
-## Término 07
-- Término: Función
-- Definición muy simple: Bloque de pasos con nombre reutilizable.
-- Ejemplo real: `calcularTotal()`.
-- Error común asociado: Hacer funciones enormes.
-
-## Término 08
-- Término: Parámetro
-- Definición muy simple: Dato que le pasas a una función.
-- Ejemplo real: `saludar(nombre)`.
-- Error común asociado: Pasar datos en orden incorrecto.
-
-## Término 09
-- Término: Retorno
-- Definición muy simple: Resultado que entrega una función.
-- Ejemplo real: `sumar(2, 3)` devuelve 5.
-- Error común asociado: Olvidar devolver valor cuando hace falta.
-
-## Término 10
-- Término: Error de compilación
-- Definición muy simple: Fallo que impide construir la app.
-- Ejemplo real: Paréntesis sin cerrar.
-- Error común asociado: Ignorar el mensaje exacto del compilador.
-
-## Término 11
-- Término: Error en ejecución
-- Definición muy simple: Fallo que ocurre cuando la app ya está corriendo.
-- Ejemplo real: App se cierra al pulsar botón.
-- Error común asociado: No revisar el log para encontrar la causa.
-
-## Término 12
-- Término: Debug
-- Definición muy simple: Buscar y corregir errores.
-- Ejemplo real: Revisar valores paso a paso.
-- Error común asociado: Cambiar código al azar sin hipótesis.
-
-## Término 13
-- Término: IDE
-- Definición muy simple: Herramienta para escribir y ejecutar código.
-- Ejemplo real: Android Studio.
-- Error común asociado: No aprender atajos y paneles básicos.
-
-## Término 14
-- Término: Android Studio
-- Definición muy simple: IDE oficial para crear apps Android.
-- Ejemplo real: Proyecto con Compose.
-- Error común asociado: No sincronizar Gradle tras cambios.
-
-## Término 15
-- Término: SDK
-- Definición muy simple: Paquete de herramientas para desarrollar.
-- Ejemplo real: Android SDK 36.
-- Error común asociado: No instalar la versión necesaria.
-
-## Término 16
-- Término: JDK
-- Definición muy simple: Herramientas para compilar código Java/Kotlin.
-- Ejemplo real: JDK 17.
-- Error común asociado: Usar versión incompatible con AGP.
-
-## Término 17
-- Término: Gradle
-- Definición muy simple: Sistema que construye la app.
-- Ejemplo real: Ejecutar tareas de build.
-- Error común asociado: Romper configuración por copiar sin entender.
-
-## Término 18
-- Término: AGP
-- Definición muy simple: Plugin de Gradle para Android.
-- Ejemplo real: AGP 9.0.0.
-- Error común asociado: Combinar AGP y Gradle incompatibles.
-
-## Término 19
-- Término: Kotlin
-- Definición muy simple: Lenguaje principal para Android moderno.
-- Ejemplo real: Escribir una pantalla Compose.
-- Error común asociado: No entender nullabilidad.
-
-## Término 20
-- Término: Null
-- Definición muy simple: Valor vacío o inexistente.
-- Ejemplo real: `nombre = null`.
-- Error común asociado: Forzar valor no nulo y provocar crash.
-
-## Término 21
-- Término: Jetpack Compose
-- Definición muy simple: Forma moderna de construir interfaz Android.
-- Ejemplo real: `Text`, `Button`, `Column`.
-- Error común asociado: Mezclar estado sin control.
-
-## Término 22
-- Término: Composable
-- Definición muy simple: Función que dibuja UI en Compose.
-- Ejemplo real: `@Composable fun Pantalla()`.
-- Error común asociado: Meter lógica de negocio dentro de UI.
-
-## Término 23
-- Término: Estado
-- Definición muy simple: Datos actuales que definen lo que ves.
-- Ejemplo real: Contador en pantalla.
-- Error común asociado: Tener dos fuentes de verdad.
-
-## Término 24
-- Término: ViewModel
-- Definición muy simple: Clase que guarda estado de pantalla y lógica de UI.
-- Ejemplo real: Cargar lista de tareas.
-- Error común asociado: Poner llamadas de red directamente en Composable.
-
-## Término 25
-- Término: UDF
-- Definición muy simple: Flujo de datos en una sola dirección.
-- Ejemplo real: Evento -> ViewModel -> nuevo estado -> UI.
-- Error común asociado: Modificar estado desde muchos sitios.
-
-## Término 26
-- Término: Repositorio
-- Definición muy simple: Capa que decide de dónde vienen los datos.
-- Ejemplo real: Leer de red o base local.
-- Error común asociado: Saltarse el repositorio y acoplar capas.
-
-## Término 27
-- Término: Room
-- Definición muy simple: Librería para guardar datos en base local.
-- Ejemplo real: Guardar tareas sin internet.
-- Error común asociado: No definir bien claves y entidades.
-
-## Término 28
-- Término: DataStore
-- Definición muy simple: Guardado simple para preferencias.
-- Ejemplo real: Modo oscuro activado.
-- Error común asociado: Usarlo para datos complejos de negocio.
-
-## Término 29
-- Término: WorkManager
-- Definición muy simple: Ejecuta tareas en segundo plano de forma confiable.
-- Ejemplo real: Sincronizar datos más tarde.
-- Error común asociado: Usarlo para tareas inmediatas de UI.
-
-## Término 30
-- Término: Test
-- Definición muy simple: Prueba automática para validar comportamiento.
-- Ejemplo real: Comprobar que sumar 2+3 da 5.
-- Error común asociado: Escribir pruebas solo al final.
-
+1. Si un término aparece y no lo dominas, vuelve a su **primera aparición**.
+2. Si dos conceptos se parecen, compáralos con ejemplos del scaffold real del curso.
+3. Si una lección introduce un término nuevo importante, añádelo aquí al cerrar esa etapa.

@@ -34,6 +34,63 @@ Ahora vamos a dejar una checklist de validación final, pero explicada de forma 
 
 Cuando cumplas esa validación, habrás terminado el setup Junior correctamente. En el siguiente módulo ya no hablaremos solo de “que funcione”. Empezaremos a hablar de “cómo diseñarlo para que escale”, introduciendo la arquitectura Android recomendada con capas UI y Data, dominio opcional, UDF y ViewModel por pantalla.
 
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Verificar que tu proyecto Junior arranca con el toolchain correcto y con las dependencias mínimas del curso sin errores de sincronización.
+
+**Pasos**:
+1. Abre `gradle/libs.versions.toml` y confirma estas versiones base: `kotlin = 2.3.10`, `agp = 9.0.0`, `composeBom` estable y `gradle = 9.1.0` en el wrapper.
+2. Revisa `app/build.gradle.kts` y asegura `compileSdk = 36`, `targetSdk = 36`, `buildFeatures { compose = true }` y las dependencias base de Compose, Navigation, Hilt, Room, DataStore y WorkManager.
+3. Ejecuta una sincronización limpia de Gradle.
+4. Lanza una compilación del módulo `app`.
+5. Condición de éxito: Gradle sincroniza, el módulo compila y puedes explicar por qué cada dependencia principal entra ya en Junior.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+// app/build.gradle.kts
+android {
+    compileSdk = 36
+
+    defaultConfig {
+        minSdk = 26
+        targetSdk = 36
+    }
+
+    buildFeatures {
+        compose = true
+    }
+}
+
+dependencies {
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+
+    implementation(libs.kotlinx.coroutines.android)
+
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.work.runtime.ktx)
+}
+```
+
+**Resultado esperado**: el proyecto sincroniza sin dependencias rotas y `./gradlew :app:assembleDebug` termina en verde.
+
+</details>
+
 
 <!-- auto-gapfix:layered-mermaid -->
 ## Diagrama de arquitectura por capas
@@ -67,7 +124,7 @@ flowchart LR
 
   VM --> UC
   UC --> ENT
-  UC -.o PORT
+  UC ==> PORT
   BOOT -.-> PORT
   BOOT -.-> API
   BOOT -.-> STORE
@@ -91,8 +148,8 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `-.o` dependencia contra contrato/abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

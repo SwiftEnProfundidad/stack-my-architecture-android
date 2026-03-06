@@ -127,6 +127,74 @@ La gobernanza técnica de sprint no está para ganar discusiones internas. Está
 
 Cuando esta capa se instala de verdad, el sprint deja de depender del estado de ánimo de la semana y empieza a apoyarse en un marco claro. Ese es el salto que prepara el terreno para la simulación del siguiente módulo, donde vas a aplicar este sistema completo en un escenario con tensión real.
 
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Priorizar entre dos deudas técnicas y justificar la decisión usando los criterios de riesgo, impacto en usuario y coste de no actuar.
+
+**Pasos**:
+1. Lee las dos deudas técnicas siguientes y asígna a cada una un `riskScore` (1–10), un `impactArea` y un `mitigationPlan` en una instancia de `TechnicalDebtItem`.
+   - **Deuda A**: el `ConflictResolver` no tiene tests unitarios; hay 3 bugs silenciosos reportados en producción relacionados con sincronización.
+   - **Deuda B**: la pantalla de ajustes usa strings hardcodeados en lugar de recursos de localización; afecta a usuarios en inglés.
+2. Aplica `DebtPrioritizationPolicy.shouldPrioritizeNow()` a cada deuda y determina cuál debe abordarse primero.
+3. Redacta en 3–4 frases la justificación de por qué la deuda elegida va antes, usando los campos del modelo como evidencia.
+4. Condición de éxito: la decisión está sustentada en datos del modelo, no en opinión personal, y cualquier miembro del equipo puede reproducir el razonamiento.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+// Modelo de deuda técnica (definido en la lección de operación a largo plazo)
+data class TechnicalDebtItem(
+    val id: String,
+    val context: String,
+    val riskScore: Int,         // 1 (bajo) a 10 (crítico)
+    val impactArea: String,
+    val mitigationPlan: String
+)
+
+class DebtPrioritizationPolicy {
+    fun shouldPrioritizeNow(item: TechnicalDebtItem): Boolean = item.riskScore >= 8
+}
+
+fun main() {
+    val policy = DebtPrioritizationPolicy()
+
+    // 1. Instancias de las dos deudas
+    val deudaA = TechnicalDebtItem(
+        id             = "DEBT-A",
+        context        = "ConflictResolver sin tests; 3 bugs en sincronización producción",
+        riskScore      = 9,                           // alto: afecta datos del usuario en producción
+        impactArea     = "Sincronización offline-first / integridad de datos",
+        mitigationPlan = "Añadir suite de tests unitarios para ConflictResolver; corregir los 3 casos borde detectados"
+    )
+
+    val deudaB = TechnicalDebtItem(
+        id             = "DEBT-B",
+        context        = "Pantalla de ajustes con strings hardcodeados; sin soporte i18n",
+        riskScore      = 4,                           // moderado: experiencia de usuario pero no corrompe datos
+        impactArea     = "Accesibilidad e internacionalización de SettingsScreen",
+        mitigationPlan = "Mover strings a res/values/strings.xml y añadir traducción en-GB"
+    )
+
+    // 2. Evaluación
+    println("Deuda A prioridad alta: ${policy.shouldPrioritizeNow(deudaA)}")  // true
+    println("Deuda B prioridad alta: ${policy.shouldPrioritizeNow(deudaB)}")  // false
+
+    // 3. Justificación (para el ejercicio, se escribe en texto):
+    // La Deuda A (riskScore=9) se prioriza primero porque su ausencia de tests ya ha causado
+    // bugs silenciosos en producción que afectan la integridad de datos del usuario.
+    // El coste de no actuar crece con cada nuevo conflicto de sincronización sin detectar.
+    // La Deuda B (riskScore=4) puede planificarse en el siguiente sprint ya que no corrompe datos
+    // y su impacto, aunque real, es de experiencia localizada y no crítico operativamente.
+}
+```
+
+**Resultado esperado**: `shouldPrioritizeNow(deudaA)` devuelve `true` y `shouldPrioritizeNow(deudaB)` devuelve `false`; la justificación escrita menciona al menos el `riskScore`, el `impactArea` y el coste operativo diferido de no actuar.
+
+</details>
+
 <!-- auto-gapfix:layered-mermaid -->
 ## Diagrama de arquitectura por capas
 
@@ -159,7 +227,7 @@ flowchart LR
 
   VM --> UC
   UC --> ENT
-  UC -.o PORT
+  UC ==> PORT
   BOOT -.-> PORT
   BOOT -.-> API
   BOOT -.-> STORE
@@ -183,8 +251,8 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `-.o` dependencia contra contrato/abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

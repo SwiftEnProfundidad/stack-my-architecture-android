@@ -154,6 +154,80 @@ Cerramos con una mini práctica guiada para fijar todo. Crea una feature pequeñ
 Cuando domines este módulo, tendrás la base correcta para entrar a integración real con Hilt, Room, DataStore y WorkManager sin crear deuda técnica innecesaria.
 
 
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Crear un `ProfileUiState` y un `ProfileViewModel` básico que cargue datos de un perfil de usuario siguiendo el patrón UDF.
+
+**Pasos**:
+1. Define `ProfileUiState` con campos `isLoading: Boolean`, `username: String` y `errorMessage: String?`.
+2. Define `sealed interface ProfileEvent` con los objetos `OnScreenStarted` y `OnRetryClicked`.
+3. Crea `ProfileViewModel` que reciba un `ProfileRepository` por constructor, exponga `uiState: StateFlow<ProfileUiState>` y gestione ambos eventos en `onEvent`.
+4. Condición de éxito: al llamar `viewModel.onEvent(ProfileEvent.OnScreenStarted)`, el estado pasa de `isLoading = true` a `username = "Ana García"` (o el nombre que devuelva tu repositorio fake), sin error.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+
+data class ProfileUiState(
+    val isLoading: Boolean = false,
+    val username: String = "",
+    val errorMessage: String? = null
+)
+
+sealed interface ProfileEvent {
+    data object OnScreenStarted : ProfileEvent
+    data object OnRetryClicked : ProfileEvent
+}
+
+interface ProfileRepository {
+    suspend fun getProfile(): String
+}
+
+class ProfileViewModel(
+    private val repository: ProfileRepository
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(ProfileUiState())
+    val uiState: StateFlow<ProfileUiState> = _uiState
+
+    fun onEvent(event: ProfileEvent) {
+        when (event) {
+            ProfileEvent.OnScreenStarted -> loadProfile()
+            ProfileEvent.OnRetryClicked  -> loadProfile()
+        }
+    }
+
+    private fun loadProfile() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+
+            runCatching { repository.getProfile() }
+                .onSuccess { name ->
+                    _uiState.value = ProfileUiState(isLoading = false, username = name)
+                }
+                .onFailure { error ->
+                    _uiState.value = ProfileUiState(
+                        isLoading = false,
+                        errorMessage = error.message ?: "Error al cargar perfil"
+                    )
+                }
+        }
+    }
+}
+```
+
+**Resultado esperado**: después de `onEvent(ProfileEvent.OnScreenStarted)` y `advanceUntilIdle()` en un test, `uiState.value.username` contiene el nombre devuelto por el repositorio y `uiState.value.isLoading` es `false`.
+
+</details>
+
 <!-- auto-gapfix:layered-mermaid -->
 ## Diagrama de arquitectura por capas
 
@@ -186,7 +260,7 @@ flowchart LR
 
   VM --> UC
   UC --> ENT
-  UC -.o PORT
+  UC ==> PORT
   BOOT -.-> PORT
   BOOT -.-> API
   BOOT -.-> STORE
@@ -210,8 +284,8 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `-.o` dependencia contra contrato/abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

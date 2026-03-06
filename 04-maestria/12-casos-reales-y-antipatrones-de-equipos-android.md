@@ -54,6 +54,106 @@ La señal más sana al final de esta lección es simple: que puedas mirar tu pro
 
 Ese tipo de mirada, más que cualquier herramienta puntual, es lo que define un perfil técnico confiable a largo plazo.
 
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Identificar el antipatrón presente en el siguiente snippet de código Android y reescribirlo aplicando la corrección arquitectónica adecuada.
+
+**Pasos**:
+1. Analiza el snippet problemático que se muestra a continuación e identifica el antipatrón (pista: tiene que ver con responsabilidades mezcladas y acoplamiento).
+2. Nombra el antipatrón con precisión (por ejemplo: "God ViewModel", "acoplamiento a infraestructura en UI", "atajo permanente sin contrato").
+3. Reescribe el código corrigiendo el antipatrón sin cambiar el comportamiento observable para el usuario.
+4. Condición de éxito: el código refactorizado es testeable con un fake sin necesidad de Retrofit ni contexto Android, y la responsabilidad de cada pieza queda clara.
+
+**Snippet problemático**:
+
+```kotlin
+// Antipatrón: ViewModel que crea dependencias directas y mezcla capas
+@HiltViewModel
+class OrdersViewModel @Inject constructor() : ViewModel() {
+
+    private val retrofit = Retrofit.Builder()
+        .baseUrl("https://api.example.com/")
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+
+    private val api = retrofit.create(OrdersApiService::class.java)
+
+    private val _orders = MutableStateFlow<List<String>>(emptyList())
+    val orders: StateFlow<List<String>> = _orders
+
+    fun loadOrders() {
+        viewModelScope.launch {
+            val response = api.getOrders()
+            _orders.value = response.map { it.title }
+        }
+    }
+}
+```
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+// Antipatrón detectado: "Acoplamiento directo a infraestructura en ViewModel"
+// El ViewModel crea Retrofit internamente → no es testeable, viola separación de capas.
+
+// ── Corrección: inyectar repositorio por contrato ──
+
+// 1. Contrato de datos (en capa de dominio/aplicación)
+interface OrdersRepository {
+    suspend fun getOrderTitles(): List<String>
+}
+
+// 2. Implementación concreta (en capa de infraestructura)
+class OrdersRepositoryImpl(
+    private val api: OrdersApiService
+) : OrdersRepository {
+    override suspend fun getOrderTitles(): List<String> {
+        return api.getOrders().map { it.title }
+    }
+}
+
+// 3. ViewModel refactorizado: recibe contrato, no infraestructura
+@HiltViewModel
+class OrdersViewModel @Inject constructor(
+    private val repository: OrdersRepository   // ← interfaz, no Retrofit
+) : ViewModel() {
+
+    private val _orders = MutableStateFlow<List<String>>(emptyList())
+    val orders: StateFlow<List<String>> = _orders
+
+    fun loadOrders() {
+        viewModelScope.launch {
+            _orders.value = repository.getOrderTitles()
+        }
+    }
+}
+
+// 4. Test unitario posible gracias al refactor (sin Retrofit ni contexto)
+class FakeOrdersRepository : OrdersRepository {
+    override suspend fun getOrderTitles(): List<String> = listOf("Pedido A", "Pedido B")
+}
+
+// val viewModel = OrdersViewModel(repository = FakeOrdersRepository())
+// viewModel.loadOrders()
+// advanceUntilIdle()
+// assertEquals(listOf("Pedido A", "Pedido B"), viewModel.orders.value)
+```
+
+**Resultado esperado**: el ViewModel refactorizado no contiene ninguna referencia a Retrofit, `GsonConverterFactory` ni URLs; `loadOrders()` puede probarse en milisegundos con `FakeOrdersRepository`; la responsabilidad de construir Retrofit queda en un módulo Hilt, no en el ViewModel.
+
+</details>
+
 <!-- auto-gapfix:layered-mermaid -->
 ## Diagrama de arquitectura por capas
 
@@ -86,7 +186,7 @@ flowchart LR
 
   VM --> UC
   UC --> ENT
-  UC -.o PORT
+  UC ==> PORT
   BOOT -.-> PORT
   BOOT -.-> API
   BOOT -.-> STORE
@@ -110,8 +210,8 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `-.o` dependencia contra contrato/abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

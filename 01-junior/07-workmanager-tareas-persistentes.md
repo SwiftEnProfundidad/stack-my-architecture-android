@@ -341,7 +341,76 @@ Luego explica qué diferencia de responsabilidad existe entre ese one-time y el 
 
 Si puedes explicarlo con claridad, entendiste WorkManager con criterio y no por copia.
 
-## Semantica de flechas aplicada a esta arquitectura
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Crear un `CoroutineWorker` llamado `LogSyncWorker` que registre un mensaje en Logcat y solo se ejecute si hay conexión a internet disponible.
+
+**Pasos**:
+1. Crea la clase `LogSyncWorker` que extienda `CoroutineWorker` y en `doWork()` llame a `Log.i("LogSyncWorker", "Sincronización iniciada en background")` antes de devolver `Result.success()`.
+2. Construye un `OneTimeWorkRequest` con la constraint `NetworkType.CONNECTED`.
+3. Encola el trabajo con `workManager.enqueueUniqueWork("log_sync_once", ExistingWorkPolicy.KEEP, request)`.
+4. Condición de éxito: al revisar el estado del trabajo con `getWorkInfosForUniqueWorkLiveData("log_sync_once")`, el worker alcanza el estado `SUCCEEDED` cuando hay red disponible, y permanece en `ENQUEUED` cuando no la hay.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+import android.content.Context
+import android.util.Log
+import androidx.work.Constraints
+import androidx.work.CoroutineWorker
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.WorkerParameters
+
+// 1. Worker que logea un mensaje
+class LogSyncWorker(
+    appContext: Context,
+    workerParams: WorkerParameters
+) : CoroutineWorker(appContext, workerParams) {
+
+    override suspend fun doWork(): Result {
+        Log.i("LogSyncWorker", "Sincronización iniciada en background")
+        // Aquí iría la lógica real de sincronización
+        return Result.success()
+    }
+}
+
+// 2 y 3. Función para encolar el trabajo con constraint de red
+fun scheduleLogSync(workManager: WorkManager) {
+    val constraints = Constraints.Builder()
+        .setRequiredNetworkType(NetworkType.CONNECTED)
+        .build()
+
+    val request = OneTimeWorkRequestBuilder<LogSyncWorker>()
+        .setConstraints(constraints)
+        .build()
+
+    workManager.enqueueUniqueWork(
+        "log_sync_once",
+        ExistingWorkPolicy.KEEP,
+        request
+    )
+}
+
+// 4. Observar estado (en un ViewModel o Fragment):
+// workManager.getWorkInfosForUniqueWorkLiveData("log_sync_once")
+//     .observe(viewLifecycleOwner) { infos ->
+//         val state = infos.firstOrNull()?.state
+//         Log.d("WorkState", "Estado actual: $state")
+//     }
+```
+
+**Resultado esperado**: en Logcat aparece el mensaje `"Sincronización iniciada en background"` con la etiqueta `LogSyncWorker` cuando el dispositivo tiene red; si no tiene red, el trabajo espera en cola hasta que se recupere la conexión.
+
+</details>
+
+<!-- semántica-flechas:auto -->
+## Semántica de flechas aplicada a esta arquitectura
 
 ```mermaid
 flowchart LR
@@ -364,15 +433,15 @@ flowchart LR
     APPROOT -.-> DI
     DI -.-> IMPL
     UI --> VM
-    VM -.o PORT
+    VM ==> PORT
     IMPL --o PORT
     IMPL --> LOCAL
-```
+```text
 
-Lectura semantica minima de este diagrama:
+Lectura semántica mínima de este diagrama:
 
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring y configuracion de ensamblado.
-3. `-.o` dependencia contra contrato/abstraccion.
-4. `--o` salida/propagacion desde implementacion concreta.
+2. `-.->` wiring y configuración de ensamblado.
+3. `==>` dependencia contra contrato/abstracción.
+4. `--o` salida/propagación desde implementación concreta.
 

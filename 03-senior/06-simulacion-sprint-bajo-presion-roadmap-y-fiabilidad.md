@@ -54,7 +54,7 @@ Condición para reabrir cambios de alto riesgo en login
 - 7 días sin alerta crítica sostenida en login
 ```
 
-Este registro resuelve un problema muy común: dos sprints después nadie recuerda por qué se partió una entrega. Con decision record, el equipo puede auditar coherencia entre lo que prometió y lo que realmente observó.
+Este registro resuelve un problema muy común: dos sprints después nadie recuerda por qué se partió una entrega. Con decisión record, el equipo puede auditar coherencia entre lo que prometió y lo que realmente observó.
 
 ## Mitad de sprint: revalidar o corregir rumbo
 
@@ -95,9 +95,92 @@ Cuando eso ocurre, fiabilidad y roadmap dejan de vivirse como guerra de áreas. 
 
 ## Cierre de la lección
 
-Esta simulación deja un aprendizaje operativo muy concreto. En Android real no gana el equipo que “siempre entrega rápido” ni el que “siempre juega seguro”. Gana el que sabe mover el peso entre entrega y estabilidad según salud del sistema, con reglas claras y capacidad de ajuste.
+Esta simulación deja un aprendizaje operativo muy concreto. En Android real no gana el equipo que "siempre entrega rápido" ni el que "siempre juega seguro". Gana el que sabe mover el peso entre entrega y estabilidad según salud del sistema, con reglas claras y capacidad de ajuste.
 
 Ese criterio es el puente natural hacia Maestría, donde ahora vas a escalar estas mismas decisiones al nivel de varios dominios y varios equipos coordinándose sin perder autonomía.
+
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Simular la decisión de rollback versus hotfix ante un incidente de login degradado en producción, aplicando el marco de gobernanza del sprint.
+
+**Pasos**:
+1. Dado el escenario: budget de login al 19%, `p95_login_render > 3500 ms` durante 20 minutos, último release hace 4 horas con flag `isNewSessionFlowEnabled` activo. Evalúa con `SprintCapacityEvaluator` (o lógica equivalente) si el modo debe cambiar a `RELIABILITY_HEAVY`.
+2. Describe en texto la decisión principal: ¿desactivas el flag primero (mitigación), haces rollback de versión (reversión) o aplicas hotfix (corrección urgente)? Justifica el orden.
+3. Escribe en Kotlin un `MidSprintCheck` que devuelva `shouldRollback = true` si el budget de login es < 15% Y la degradación lleva más de 15 minutos activa.
+4. Condición de éxito: el código compila, el test con `loginBudget = 0.14` y `degradationMinutes = 20` devuelve `shouldRollback = true`, y la justificación escrita sigue el orden: mitigar → observar → rollback si no mejora.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+// 3. Lógica de decisión de rollback
+data class MidSprintIncidentContext(
+    val loginBudgetRemaining: Double,    // fracción restante, p. ej. 0.14
+    val degradationActiveMinutes: Int
+)
+
+data class RollbackDecision(
+    val shouldRollback: Boolean,
+    val reason: String
+)
+
+class MidSprintCheck {
+    fun evaluate(context: MidSprintIncidentContext): RollbackDecision {
+        val budgetCritical      = context.loginBudgetRemaining < 0.15
+        val degradationSustained = context.degradationActiveMinutes >= 15
+
+        return if (budgetCritical && degradationSustained) {
+            RollbackDecision(
+                shouldRollback = true,
+                reason = "Budget crítico (${(context.loginBudgetRemaining * 100).toInt()}%) " +
+                         "y degradación sostenida ${context.degradationActiveMinutes} min → rollback recomendado"
+            )
+        } else {
+            RollbackDecision(
+                shouldRollback = false,
+                reason = "Situación bajo umbral; mantener mitigación activa y monitorear"
+            )
+        }
+    }
+}
+
+// Test de verificación
+fun main() {
+    val checker = MidSprintCheck()
+
+    val scenarioA = MidSprintIncidentContext(
+        loginBudgetRemaining   = 0.14,
+        degradationActiveMinutes = 20
+    )
+    val decisionA = checker.evaluate(scenarioA)
+    println("Escenario A - shouldRollback: ${decisionA.shouldRollback}")  // true
+    println("Razón: ${decisionA.reason}")
+
+    val scenarioB = MidSprintIncidentContext(
+        loginBudgetRemaining   = 0.20,
+        degradationActiveMinutes = 10
+    )
+    val decisionB = checker.evaluate(scenarioB)
+    println("Escenario B - shouldRollback: ${decisionB.shouldRollback}")  // false
+}
+
+/*
+ * 2. Justificación del orden de decisión:
+ *
+ * Paso 1 · Mitigar: desactivar flag isNewSessionFlowEnabled → observar recuperación 15 min.
+ * Paso 2 · Observar: si p95 baja a < 2500 ms y budget se estabiliza → continuar sin rollback.
+ * Paso 3 · Rollback: si budget < 15% Y degradación sigue activa > 15 min → revertir versión.
+ *
+ * Este orden minimiza el impacto operativo: el flag es la palanca más rápida y reversible;
+ * el rollback completo es la última opción porque afecta también a usuarios sin problemas.
+ */
+```
+
+**Resultado esperado**: `MidSprintCheck.evaluate` devuelve `shouldRollback = true` con `loginBudget = 0.14` y `degradationMinutes = 20`, y `false` con `loginBudget = 0.20` y `degradationMinutes = 10`; la decisión documentada sigue el orden mitigar → observar → rollback con justificación basada en datos.
+
+</details>
 
 <!-- auto-gapfix:layered-mermaid -->
 ## Diagrama de arquitectura por capas
@@ -131,7 +214,7 @@ flowchart LR
 
   VM --> UC
   UC --> ENT
-  UC -.o PORT
+  UC ==> PORT
   BOOT -.-> PORT
   BOOT -.-> API
   BOOT -.-> STORE
@@ -155,8 +238,8 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `-.o` dependencia contra contrato/abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

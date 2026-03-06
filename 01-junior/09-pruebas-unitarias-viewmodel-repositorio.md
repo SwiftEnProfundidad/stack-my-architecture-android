@@ -356,7 +356,84 @@ Si ese test queda sólido, dominas el ciclo completo: error, reintento y recuper
 
 Con eso, cierras Junior con una base profesional real: no solo implementas features, también demuestras con pruebas que se comportan como se espera.
 
-## Semantica de flechas aplicada a esta arquitectura
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Escribir un test unitario de `TasksViewModel` usando `FakeTasksRepository` que verifique el estado de éxito cuando el repositorio devuelve una lista no vacía.
+
+**Pasos**:
+1. Configura `MainDispatcherRule` en la clase de test `TasksViewModelSuccessTest` con `@get:Rule`.
+2. Crea una instancia de `FakeTasksRepository` con `tasksToReturn = listOf(Task(id = "1", title = "Tarea de prueba", isDone = false))` y `shouldFail = false`.
+3. Instancia `TasksViewModel(repository = fakeRepo)` y llama a `viewModel.onEvent(TasksEvent.OnScreenStarted)` seguido de `advanceUntilIdle()`.
+4. Condición de éxito: `viewModel.uiState.value.tasks.size == 1`, `viewModel.uiState.value.isLoading == false` y `viewModel.uiState.value.errorMessage == null`.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+import junit.framework.TestCase.assertEquals
+import junit.framework.TestCase.assertFalse
+import junit.framework.TestCase.assertNull
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
+import org.junit.Rule
+import org.junit.Test
+
+// Fake de repositorio (ya definido en la lección)
+class FakeTasksRepository : TasksRepository {
+    var shouldFail: Boolean = false
+    var tasksToReturn: List<Task> = emptyList()
+
+    override fun observeTasks(): Flow<List<Task>> =
+        if (shouldFail) flow { throw IllegalStateException("Error simulado") }
+        else flowOf(tasksToReturn)
+
+    override suspend fun replaceTasks(tasks: List<Task>) {
+        tasksToReturn = tasks
+    }
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class TasksViewModelSuccessTest {
+
+    // 1. Regla de dispatcher controlado
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule()
+
+    @Test
+    fun whenLoadSucceeds_uiStateContainsTasks() = runTest {
+        // 2. Preparar escenario de éxito
+        val fakeRepo = FakeTasksRepository().apply {
+            tasksToReturn = listOf(Task(id = "1", title = "Tarea de prueba", isDone = false))
+            shouldFail = false
+        }
+
+        // 3. Instanciar ViewModel y disparar evento
+        val viewModel = TasksViewModel(repository = fakeRepo)
+        viewModel.onEvent(TasksEvent.OnScreenStarted)
+        advanceUntilIdle()
+
+        // 4. Verificar condiciones de éxito
+        val state = viewModel.uiState.value
+        assertFalse(state.isLoading)
+        assertEquals(1, state.tasks.size)
+        assertEquals("Tarea de prueba", state.tasks.first().title)
+        assertNull(state.errorMessage)
+    }
+}
+```
+
+**Resultado esperado**: el test se ejecuta en milisegundos sin emulador, pasa en verde y falla si el ViewModel no actualiza correctamente el estado tras recibir el evento `OnScreenStarted`.
+
+</details>
+
+<!-- semántica-flechas:auto -->
+## Semántica de flechas aplicada a esta arquitectura
 
 ```mermaid
 flowchart LR
@@ -379,15 +456,15 @@ flowchart LR
     APPROOT -.-> DI
     DI -.-> IMPL
     UI --> VM
-    VM -.o PORT
+    VM ==> PORT
     IMPL --o PORT
     IMPL --> LOCAL
-```
+```text
 
-Lectura semantica minima de este diagrama:
+Lectura semántica mínima de este diagrama:
 
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring y configuracion de ensamblado.
-3. `-.o` dependencia contra contrato/abstraccion.
-4. `--o` salida/propagacion desde implementacion concreta.
+2. `-.->` wiring y configuración de ensamblado.
+3. `==>` dependencia contra contrato/abstracción.
+4. `--o` salida/propagación desde implementación concreta.
 

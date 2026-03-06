@@ -146,6 +146,85 @@ Un tablero operativo no existe para impresionar en demos. Existe para ayudarte a
 Si lo construyes con señales conectadas a objetivos, alertas con acción clara y revisión viva, se convierte en una pieza central de madurez senior en Android.
 
 En la siguiente lección vamos a cerrar este tramo conectando todo lo que llevas hasta ahora en un modelo de gobernanza técnica de sprint: cómo negociar capacidad entre fiabilidad y roadmap sin volver al caos de prioridades cambiantes.
+
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Crear una alerta accionable para cuando la tasa de crash supera el 1% en producción, con condición, severidad, acción inmediata y runbook asociado.
+
+**Pasos**:
+1. Documenta en `docs/reliability/alerts-policy.md` la alerta `crash_rate_critical` con su condición (`crash_rate > 1.0%` durante 10 minutos en producción), severidad y acción inmediata.
+2. Implementa en Kotlin un `CrashRateAlertEvaluator` que reciba `crashRatePercent: Double` y devuelva un `AlertDecision` sellado: `FireAlert(reason)` si supera el umbral, o `NoAlert` si está dentro del rango.
+3. Escribe un test unitario que verifique que con `crashRatePercent = 1.5` se devuelve `FireAlert`, y con `crashRatePercent = 0.8` se devuelve `NoAlert`.
+4. Condición de éxito: los dos tests pasan en verde y el documento de alerta incluye el enlace al runbook de crash.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+import junit.framework.TestCase.assertTrue
+import org.junit.Test
+
+// 2. Tipos sellados y evaluador
+sealed interface AlertDecision {
+    data class FireAlert(val reason: String) : AlertDecision
+    data object NoAlert                      : AlertDecision
+}
+
+class CrashRateAlertEvaluator(
+    private val thresholdPercent: Double = 1.0
+) {
+    fun evaluate(crashRatePercent: Double): AlertDecision {
+        return if (crashRatePercent > thresholdPercent) {
+            AlertDecision.FireAlert(
+                reason = "Crash rate ${crashRatePercent}% supera umbral ${thresholdPercent}%"
+            )
+        } else {
+            AlertDecision.NoAlert
+        }
+    }
+}
+
+// 3. Tests unitarios
+class CrashRateAlertEvaluatorTest {
+
+    private val evaluator = CrashRateAlertEvaluator(thresholdPercent = 1.0)
+
+    @Test
+    fun whenCrashRateAboveThreshold_thenFireAlert() {
+        val decision = evaluator.evaluate(crashRatePercent = 1.5)
+        assertTrue(decision is AlertDecision.FireAlert)
+    }
+
+    @Test
+    fun whenCrashRateBelowThreshold_thenNoAlert() {
+        val decision = evaluator.evaluate(crashRatePercent = 0.8)
+        assertTrue(decision is AlertDecision.NoAlert)
+    }
+}
+```
+
+```markdown
+<!-- docs/reliability/alerts-policy.md (fragmento) -->
+
+## Alerta: crash_rate_critical
+
+**Condición**: `crash_rate > 1.0%` durante 10 minutos continuados en canal production
+**Severidad**: Crítica
+**Acción inmediata**:
+1. Revisar `app_version` con mayor tasa de crash en Crashlytics/Firebase
+2. Si está concentrado en versión reciente: pausar rollout en Play Console
+3. Evaluar desactivar feature flag activo en el flujo afectado
+4. Notificar en `#incidents` con versión, tasa actual y acción tomada
+
+**Runbook asociado**: docs/runbooks/incident-login-npe.md
+```
+
+**Resultado esperado**: los tests pasan en verde; el evaluador dispara la alerta correctamente al superar el 1% y permanece silencioso por debajo; el documento de alerta es ejecutable sin ambigüedad para cualquier miembro del equipo de guardia.
+
+</details>
+
 <!-- auto-gapfix:layered-mermaid -->
 ## Diagrama de arquitectura por capas
 
@@ -178,7 +257,7 @@ flowchart LR
 
   VM --> UC
   UC --> ENT
-  UC -.o PORT
+  UC ==> PORT
   BOOT -.-> PORT
   BOOT -.-> API
   BOOT -.-> STORE
@@ -202,8 +281,8 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `-.o` dependencia contra contrato/abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

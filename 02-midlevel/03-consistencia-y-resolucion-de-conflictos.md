@@ -377,7 +377,89 @@ Por último crea empate exacto de timestamp y verifica que el estado pasa a `Con
 
 Si puedes ejecutar y explicar esos tres escenarios con evidencia, ya tienes una base Midlevel real de consistencia y resolución de conflictos.
 
-## Semantica de flechas aplicada a esta arquitectura
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Implementar la política `timestamp-wins` para conflictos de sincronización: la versión con el `updatedAtMillis` más reciente gana, y en caso de empate se devuelve `ManualReview`.
+
+**Pasos**:
+1. Crea `ConflictResolver` con un método `resolve(local: TaskEntity, remote: TaskDto): ConflictResolution` que compare `updatedAtMillis`.
+2. Escribe tres tests unitarios: uno donde local gana, uno donde remoto gana y uno de empate exacto.
+3. Verifica que el resultado devuelto en cada caso es `KeepLocal`, `KeepRemote` y `ManualReview` respectivamente.
+4. Condición de éxito: los tres tests pasan sin dependencias externas; el resolver no accede a red ni a base de datos.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+import junit.framework.TestCase.assertTrue
+import org.junit.Test
+
+// Tipos sellados de resolución (definidos en la lección)
+sealed interface ConflictResolution {
+    data class KeepLocal(val reason: String)     : ConflictResolution
+    data class KeepRemote(val reason: String)    : ConflictResolution
+    data class ManualReview(val reason: String)  : ConflictResolution
+}
+
+// Modelos mínimos para el ejercicio
+data class TaskEntity(val id: String, val title: String, val done: Boolean, val updatedAtMillis: Long)
+data class TaskDto(val id: String, val title: String, val done: Boolean, val updatedAtMillis: Long)
+
+// 1. Política timestamp-wins
+class ConflictResolver {
+    fun resolve(local: TaskEntity, remote: TaskDto): ConflictResolution {
+        return when {
+            local.updatedAtMillis > remote.updatedAtMillis ->
+                ConflictResolution.KeepLocal("Local es más reciente")
+
+            local.updatedAtMillis < remote.updatedAtMillis ->
+                ConflictResolution.KeepRemote("Remoto es más reciente")
+
+            else ->
+                ConflictResolution.ManualReview("Misma marca temporal; se requiere revisión manual")
+        }
+    }
+}
+
+// 2 y 3. Tests unitarios
+class ConflictResolverTest {
+
+    private val resolver = ConflictResolver()
+
+    @Test
+    fun whenLocalIsNewer_thenKeepLocal() {
+        val local  = TaskEntity("1", "Tarea", false, updatedAtMillis = 2000L)
+        val remote = TaskDto("1", "Tarea", false, updatedAtMillis = 1000L)
+        val result = resolver.resolve(local, remote)
+        assertTrue(result is ConflictResolution.KeepLocal)
+    }
+
+    @Test
+    fun whenRemoteIsNewer_thenKeepRemote() {
+        val local  = TaskEntity("1", "Tarea", false, updatedAtMillis = 1000L)
+        val remote = TaskDto("1", "Tarea", false, updatedAtMillis = 2000L)
+        val result = resolver.resolve(local, remote)
+        assertTrue(result is ConflictResolution.KeepRemote)
+    }
+
+    @Test
+    fun whenSameTimestamp_thenManualReview() {
+        val local  = TaskEntity("1", "Tarea", false, updatedAtMillis = 1500L)
+        val remote = TaskDto("1", "Tarea", false, updatedAtMillis = 1500L)
+        val result = resolver.resolve(local, remote)
+        assertTrue(result is ConflictResolution.ManualReview)
+    }
+}
+```
+
+**Resultado esperado**: los tres tests pasan en verde en milisegundos; si inviertes los timestamps en alguno de ellos, el test falla con un `AssertionError` que muestra el tipo de resolución incorrecto.
+
+</details>
+
+<!-- semántica-flechas:auto -->
+## Semántica de flechas aplicada a esta arquitectura
 
 ```mermaid
 flowchart LR
@@ -400,15 +482,15 @@ flowchart LR
     APPROOT -.-> DI
     DI -.-> IMPL
     UI --> VM
-    VM -.o PORT
+    VM ==> PORT
     IMPL --o PORT
     IMPL --> LOCAL
-```
+```text
 
-Lectura semantica minima de este diagrama:
+Lectura semántica mínima de este diagrama:
 
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring y configuracion de ensamblado.
-3. `-.o` dependencia contra contrato/abstraccion.
-4. `--o` salida/propagacion desde implementacion concreta.
+2. `-.->` wiring y configuración de ensamblado.
+3. `==>` dependencia contra contrato/abstracción.
+4. `--o` salida/propagación desde implementación concreta.
 

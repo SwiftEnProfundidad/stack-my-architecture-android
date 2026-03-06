@@ -6,7 +6,7 @@ Referencia base para mantener semántica de dependencias consistente en diagrama
 flowchart LR
     UI[Compose UI] --> VM[ViewModel]
     VM -.-> DI[Hilt Module]
-    VM -.o PORT[Repository Interface]
+    VM ==> PORT[Repository Interface]
     VM --o OUT[Telemetry / Event Output]
 ```
 
@@ -14,5 +14,5 @@ flowchart LR
 
 - `-->` Dependencia directa (runtime).
 - `-.->` Wiring / configuración.
-- `-.o` Contrato / abstracción.
+- `==>` Contrato / abstracción.
 - `--o` Salida / propagación.

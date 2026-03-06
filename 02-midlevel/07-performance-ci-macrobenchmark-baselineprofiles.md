@@ -197,9 +197,70 @@ La combinación que ya tienes al cerrar este tramo midlevel es potente: comporta
 
 ## Cierre del módulo
 
-Con este módulo diste un paso que muchos equipos tardan años en dar bien: pasar de “el rendimiento se siente raro” a “tenemos evidencia automatizada y repetible del rendimiento”.
+Con este módulo diste un paso que muchos equipos tardan años en dar bien: pasar de "el rendimiento se siente raro" a "tenemos evidencia automatizada y repetible del rendimiento".
 
 En el siguiente tramo vamos a entrar en observabilidad de producción más allá de logs locales, conectando métricas técnicas con señales de producto para cerrar el círculo entre desarrollo, operación y decisiones de roadmap.
+
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Escribir un test `StartupBenchmark` con `MacrobenchmarkRule` que mida el tiempo de arranque en frío (`COLD`) de la app, con 5 iteraciones, y publicar el resultado como artefacto de CI.
+
+**Pasos**:
+1. En el módulo `:benchmarks`, crea la clase `StartupBenchmark` anotada con `@RunWith(AndroidJUnit4::class)`.
+2. Define el test `coldStartup` que use `benchmarkRule.measureRepeated(packageName = "com.tuempresa.app", metrics = listOf(StartupTimingMetric()), iterations = 5, startupMode = StartupMode.COLD)` con un bloque `setupBlock { pressHome() }` y el cuerpo `startActivityAndWait()`.
+3. En el workflow de CI, añade un paso `Upload benchmark results` con `actions/upload-artifact@v4` que suba la carpeta `benchmarks/build/outputs/connected_android_test_additional_output`.
+4. Condición de éxito: el artefacto aparece en la ejecución de GitHub Actions y contiene el fichero JSON de resultados con la métrica `timeToInitialDisplayMs`.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+// benchmarks/src/main/java/com/tuempresa/benchmarks/StartupBenchmark.kt
+import androidx.benchmark.macro.StartupMode
+import androidx.benchmark.macro.StartupTimingMetric
+import androidx.benchmark.macro.junit4.MacrobenchmarkRule
+import androidx.test.ext.junit4.runners.AndroidJUnit4
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+// 1 y 2. Test de startup con 5 iteraciones
+@RunWith(AndroidJUnit4::class)
+class StartupBenchmark {
+
+    @get:Rule
+    val benchmarkRule = MacrobenchmarkRule()
+
+    @Test
+    fun coldStartup() = benchmarkRule.measureRepeated(
+        packageName  = "com.tuempresa.app",
+        metrics      = listOf(StartupTimingMetric()),
+        iterations   = 5,
+        startupMode  = StartupMode.COLD,
+        setupBlock   = { pressHome() }
+    ) {
+        startActivityAndWait()
+    }
+}
+```
+
+```yaml
+# Fragmento del workflow CI para subir resultados (paso 3)
+- name: Run cold startup benchmark
+  run: ./gradlew :benchmarks:connectedBenchmarkAndroidTest
+
+- name: Upload benchmark results
+  uses: actions/upload-artifact@v4
+  with:
+    name: benchmark-results
+    path: benchmarks/build/outputs/connected_android_test_additional_output
+```
+
+**Resultado esperado**: el pipeline de CI ejecuta el benchmark en el dispositivo gestionado, genera un JSON con valores como `timeToInitialDisplayMs` y lo sube como artefacto descargable; si en un PR posterior el arranque supera un umbral configurado, el gate puede marcarlo como degradación de rendimiento.
+
+</details>
 
 <!-- auto-gapfix:layered-mermaid -->
 ## Diagrama de arquitectura por capas
@@ -233,7 +294,7 @@ flowchart LR
 
   VM --> UC
   UC --> ENT
-  UC -.o PORT
+  UC ==> PORT
   BOOT -.-> PORT
   BOOT -.-> API
   BOOT -.-> STORE
@@ -257,8 +318,8 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `-.o` dependencia contra contrato/abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

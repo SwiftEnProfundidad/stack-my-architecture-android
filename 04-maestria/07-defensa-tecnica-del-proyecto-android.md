@@ -69,6 +69,79 @@ Cuando presentas así, el mensaje final queda claro: no construiste una demo, co
 
 Con esta lección cerramos la secuencia principal de Maestría. Lo que sigue es aplicar este mismo criterio en tu proyecto final, defendiendo decisiones de manera honesta, técnica y conectada con el problema real de producto que quieres resolver.
 
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Preparar tres preguntas de defensa técnica sobre el proyecto Android y redactar una respuesta sólida para cada una, conectando decisiones de arquitectura con problemas reales de producto.
+
+**Pasos**:
+1. Formula la pregunta 1 sobre offline-first: ¿por qué la UI no depende de la red directamente y cómo garantizas consistencia de datos?
+2. Formula la pregunta 2 sobre testabilidad: ¿cómo demuestras con pruebas que el flujo de sincronización funciona sin necesidad de una API real?
+3. Formula la pregunta 3 sobre operación: ¿qué harías si en producción la tasa de error de sync supera el 5% durante un release?
+4. Condición de éxito: cada respuesta menciona al menos una decisión de arquitectura concreta (clase, patrón o mecanismo) y su impacto observable en el producto o en el equipo.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```
+Pregunta 1: ¿Por qué la UI no depende de la red directamente?
+
+La UI observa siempre Room como fuente de verdad a través de `Flow<List<Task>>` expuesto
+por el repositorio. La red solo actualiza el estado local; nunca hay una llamada directa
+de la capa de presentación a Retrofit. Esto garantiza que el usuario ve datos coherentes
+aunque esté sin conexión: las acciones se guardan con `SyncState.PENDING` y se sincronizan
+cuando WorkManager detecta que la red vuelve. La consistencia se mantiene porque Room es
+reactivo: cualquier cambio local emite automáticamente al flow.
+
+---
+
+Pregunta 2: ¿Cómo demuestras con pruebas que la sincronización funciona?
+
+Usamos `FakeTasksDao` y `FakeTasksRemoteDataSource` en tests unitarios de
+`TasksSyncOrchestrator`. El test prepara un DAO con tareas en estado `PENDING`, ejecuta
+`syncPendingTasks()` con `advanceUntilIdle()` y verifica que el DAO actualiza las filas
+a `SYNCED`. No se necesita emulador ni servidor real. La ausencia de dependencias externas
+hace los tests repetibles en milisegundos en CI, lo que permite ejecutarlos en cada PR.
+
+---
+
+Pregunta 3: ¿Qué harías si la tasa de error de sync supera el 5% en producción?
+
+1. Verificar en el tablero operativo si el aumento está concentrado en una versión o
+   segmento concreto (API level, tipo de red).
+2. Si está correlacionado con un release reciente: pausar expansión del rollout en Play Console.
+3. Si el problema es el endpoint de sincronización: desactivar el flag que activa la nueva
+   estrategia de sync (si existe) para reducir impacto sin rollback completo.
+4. Si no mejora en 15 minutos: activar rollback y abrir postmortem siguiendo el runbook
+   `docs/runbooks/incident-sync-failure.md`.
+5. En paralelo, analizar logs estructurados con `operationId` para aislar la causa raíz
+   antes de re-lanzar la corrección.
+```
+
+```kotlin
+// Fragmento que ilustra la respuesta 2 en código
+class FakeTasksSyncOrchestrator {
+    var syncCalled = false
+    var shouldFail = false
+
+    suspend fun syncPendingTasks() {
+        syncCalled = true
+        if (shouldFail) throw IllegalStateException("Sync error simulado")
+    }
+}
+
+// En el test:
+// val fake = FakeTasksSyncOrchestrator()
+// val repo = TasksRepository(dao = fakeDao, syncScheduler = fake, clock = { 1000L })
+// repo.markTaskDoneOfflineFirst("task-1", current)
+// assertTrue(fake.syncCalled)
+```
+
+**Resultado esperado**: las tres respuestas se pueden exponer verbalmente en 60–90 segundos cada una; quien escucha puede hacer preguntas de seguimiento sin que surjan inconsistencias; el código de ejemplo compila y es coherente con la arquitectura descrita en el curso.
+
+</details>
+
 <!-- auto-gapfix:layered-mermaid -->
 ## Diagrama de arquitectura por capas
 
@@ -101,7 +174,7 @@ flowchart LR
 
   VM --> UC
   UC --> ENT
-  UC -.o PORT
+  UC ==> PORT
   BOOT -.-> PORT
   BOOT -.-> API
   BOOT -.-> STORE
@@ -125,8 +198,8 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `-.o` dependencia contra contrato/abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

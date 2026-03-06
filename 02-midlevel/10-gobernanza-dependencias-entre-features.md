@@ -133,6 +133,38 @@ Eso significa que la arquitectura dejó de ser un dibujo y se volvió una práct
 Con este módulo acabas de blindar una de las fuentes más comunes de caos en proyectos Android que crecen rápido. Ahora no solo puedes construir bien, medir bien y priorizar bien. También puedes crecer sin perder estructura.
 
 En el siguiente tramo vamos a enlazar esta gobernanza con evolución de APIs internas y versionado de contratos para que las features puedan cambiar sin romper compatibilidad entre equipos.
+
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Detectar una dependencia inválida entre dos features y proponer un contrato o módulo compartido correcto.
+
+**Pasos**:
+1. Imagina que `:features:catalog` importa directamente clases internas de `:features:auth`.
+2. Enumera por qué eso rompe autonomía y versionado.
+3. Propón un destino alternativo para lo compartido, por ejemplo `:shared:kernel` o `:contracts:session`.
+4. Define un contrato mínimo que ambas features consuman sin conocerse internamente.
+5. Condición de éxito: puedes redibujar la relación sin dependencia directa entre features.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+interface SessionContract {
+    fun currentUserId(): String?
+}
+
+class CatalogSessionReader(
+    private val sessionContract: SessionContract
+) {
+    fun canLoadCatalog(): Boolean = sessionContract.currentUserId() != null
+}
+```
+
+**Resultado esperado**: `catalog` deja de importar implementaciones internas de `auth` y ambos módulos dependen de un contrato estable.
+
+</details>
 <!-- auto-gapfix:layered-mermaid -->
 ## Diagrama de arquitectura por capas
 
@@ -165,7 +197,7 @@ flowchart LR
 
   VM --> UC
   UC --> ENT
-  UC -.o PORT
+  UC ==> PORT
   BOOT -.-> PORT
   BOOT -.-> API
   BOOT -.-> STORE
@@ -189,8 +221,8 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `-.o` dependencia contra contrato/abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

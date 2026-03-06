@@ -59,6 +59,92 @@ En la parte final de la entrevista, suele aparecer la pregunta abierta: ¿qué m
 
 Con esto cerramos tu preparación para defensa final del curso. Si llegaste hasta aquí y puedes sostener esta conversación con serenidad, ya no estás solo implementando Android. Estás diseñando y operando sistemas con criterio profesional.
 
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Autoevaluar el proyecto Android contra los criterios de la rúbrica identificando al menos dos fortalezas, dos áreas de mejora y un plan de acción concreto para la siguiente semana.
+
+**Pasos**:
+1. Revisa el proyecto y asígna una puntuación de 1 a 10 en cada dimensión: separación de capas, cobertura de tests, observabilidad, estrategia offline-first y calidad de contratos entre dominios.
+2. Identifica las dos dimensiones con puntuación más alta (fortalezas) y las dos con puntuación más baja (áreas de mejora).
+3. Para cada área de mejora escribe una tarea concreta y ejecutable en 1–3 días (no "mejorar tests" sino "añadir test de integración para `TasksSyncOrchestrator` cubriendo el caso `PENDING → FAILED`").
+4. Condición de éxito: el plan de acción es lo suficientemente específico para abrir tickets de trabajo a partir de él; las fortalezas están respaldadas por evidencia observable (código, tests o métricas).
+
+<details>
+<summary>Solución de referencia</summary>
+
+```
+Autoevaluación del proyecto Android - Sprint de cierre
+
+──────────────────────────────────────────────────────────
+DIMENSIÓN                         PUNTUACIÓN   EVIDENCIA
+──────────────────────────────────────────────────────────
+Separación de capas (UI/Data)         9/10     UI no depende de Retrofit ni Room directamente.
+                                               ViewModel recibe repositorio por constructor.
+
+Cobertura de tests                    6/10     Tests de ViewModel y repositorio presentes.
+                                               Faltan tests de integración de sync y UI tests
+                                               para estado de error con testTag.
+
+Observabilidad                        7/10     AppLogger inyectado con FakeLogger en tests.
+                                               Faltan metadatos de version y API level en logs
+                                               de sincronización.
+
+Estrategia offline-first              8/10     Room es fuente de verdad. WorkManager programa sync.
+                                               Falta manejo explícito del estado FAILED en UI.
+
+Contratos entre dominios              5/10     Se usa repositorio como contrato interno, pero no
+                                               hay separación de módulos V1/V2 para evolución.
+──────────────────────────────────────────────────────────
+
+FORTALEZAS:
+1. Separación de capas (9/10): la arquitectura por feature con UDF está bien implementada
+   y la pantalla no conoce infraestructura de datos.
+2. Offline-first (8/10): Room como single source of truth con WorkManager garantiza que
+   el usuario siempre ve algo útil aunque no tenga red.
+
+ÁREAS DE MEJORA:
+1. Cobertura de tests (6/10)
+2. Contratos entre dominios (5/10)
+
+PLAN DE ACCIÓN (próximos 7 días):
+
+Tarea 1 (día 1-2): Escribir test de integración para `TasksSyncOrchestrator` que cubra:
+  - Escenario PENDING → SYNCED con fake de API exitosa
+  - Escenario PENDING → FAILED con fake de API lanzando IOException
+  Archivo: TasksSyncOrchestratorIntegrationTest.kt
+
+Tarea 2 (día 3): Añadir `testTag("tasks_retry_button")` al botón de reintento en
+  `TasksErrorContent` y escribir el test de UI que verifica el click con `performClick()`.
+
+Tarea 3 (día 4-5): Extraer `TasksRepositoryContract` a un paquete `.contract` independiente
+  del módulo de data para preparar el terreno de versionado V1/V2 en futuros sprints.
+```
+
+```kotlin
+// Snippet que ilustra la Tarea 1 del plan de acción
+class TasksSyncOrchestratorIntegrationTest {
+
+    @Test
+    fun whenApiSucceeds_thenPendingTasksMovesToSynced() = runTest {
+        val fakeDao    = FakeTasksDao(initialState = listOf(taskPending))
+        val fakeRemote = FakeTasksRemoteDataSource(shouldFail = false)
+        val orchestrator = TasksSyncOrchestrator(dao = fakeDao, remote = fakeRemote, clock = { 9000L })
+
+        orchestrator.syncPendingTasks()
+
+        val result = fakeDao.getBySyncState(SyncState.SYNCED)
+        assertEquals(1, result.size)
+        assertEquals("task-1", result.first().id)
+    }
+}
+```
+
+**Resultado esperado**: la autoevaluación identifica puntos de mejora concretos; las tareas del plan de acción son lo suficientemente específicas para abrirse como tickets en Jira o GitHub Issues; las fortalezas están avaladas por evidencia visible en el código del proyecto.
+
+</details>
+
 <!-- auto-gapfix:layered-mermaid -->
 ## Diagrama de arquitectura por capas
 
@@ -91,7 +177,7 @@ flowchart LR
 
   VM --> UC
   UC --> ENT
-  UC -.o PORT
+  UC ==> PORT
   BOOT -.-> PORT
   BOOT -.-> API
   BOOT -.-> STORE
@@ -115,8 +201,8 @@ flowchart LR
   linkStyle 8 stroke:#86efac,stroke-width:2.6px
 ```
 
-La lectura del diagrama sigue esta semantica:
+La lectura del diagrama sigue esta semántica:
 1. `-->` dependencia directa en runtime.
-2. `-.->` wiring o configuracion.
-3. `-.o` dependencia contra contrato/abstraccion.
-4. `--o` salida o propagacion de resultado.
+2. `-.->` wiring o configuración.
+3. `==>` contrato o abstracción.
+4. `--o` salida o propagación de resultado.

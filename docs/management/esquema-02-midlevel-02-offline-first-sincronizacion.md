@@ -1,4 +1,4 @@
-# Esquema detallado · 02-midlevel/02-offline-first-sincronizacion.md
+# Esquema detallado · 02-midlevel/02-offline-first-sincronización.md
 
 ## Objetivo pedagógico del módulo
 

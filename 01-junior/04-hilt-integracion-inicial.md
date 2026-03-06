@@ -89,11 +89,11 @@ flowchart LR
     CONTAINER -.-> VM
 
     UI --> VM
-    VM -.o PORT
+    VM ==> PORT
     IMPL --o PORT
     IMPL --> DAO
     IMPL --> API
-```
+```text
 
 Lectura semántica conexión por conexión:
 
@@ -101,7 +101,7 @@ Lectura semántica conexión por conexión:
    `TasksScreen --> TasksViewModel`, `TasksRepositoryImpl --> TasksDao`, `TasksRepositoryImpl --> TasksApi`.
 2. `-.->` wiring/configuración:
    `@HiltAndroidApp`, `TasksModule` y `Hilt Container` conectan dependencias, pero no ejecutan caso de uso por sí mismos.
-3. `-.o` contrato/abstracción:
+3. `==>` contrato/abstracción:
    `TasksViewModel` depende del contrato `TasksRepository` en lugar de una clase concreta.
 4. `--o` salida/propagación:
    `TasksRepositoryImpl` satisface y propaga ese contrato hacia el flujo real de datos.
@@ -387,3 +387,74 @@ Crea una segunda implementación `TasksRepositoryErrorImpl` que lance excepción
 Qué aprendes con este reto: cambiar comportamiento global sin tocar ViewModel ni pantalla.
 
 Si puedes explicar por qué eso es posible, entendiste DI de verdad.
+
+---
+
+## Ejercicio guiado
+
+**Objetivo**: Crear un módulo Hilt `NotificationsModule` que provea un repositorio `NotificationsRepository` e inyectarlo en un `NotificationsViewModel`.
+
+**Pasos**:
+1. Define la interfaz `NotificationsRepository` con `suspend fun getCount(): Int`.
+2. Implementa `NotificationsRepositoryImpl` devolviendo `42` como valor de ejemplo.
+3. Crea `NotificationsModule` con `@Module`, `@InstallIn(SingletonComponent::class)` y un `@Provides` que devuelva `NotificationsRepositoryImpl` como `NotificationsRepository`.
+4. Condición de éxito: `NotificationsViewModel` anotado con `@HiltViewModel` recibe el repositorio por `@Inject constructor`, llama a `getCount()` y expone el resultado como `StateFlow<Int>` sin errores de compilación.
+
+<details>
+<summary>Solución de referencia</summary>
+
+```kotlin
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+// 1. Contrato
+interface NotificationsRepository {
+    suspend fun getCount(): Int
+}
+
+// 2. Implementación concreta
+class NotificationsRepositoryImpl : NotificationsRepository {
+    override suspend fun getCount(): Int = 42
+}
+
+// 3. Módulo Hilt
+@Module
+@InstallIn(SingletonComponent::class)
+object NotificationsModule {
+
+    @Provides
+    fun provideNotificationsRepository(): NotificationsRepository {
+        return NotificationsRepositoryImpl()
+    }
+}
+
+// 4. ViewModel inyectado por Hilt
+@HiltViewModel
+class NotificationsViewModel @Inject constructor(
+    private val repository: NotificationsRepository
+) : ViewModel() {
+
+    private val _count = MutableStateFlow(0)
+    val count: StateFlow<Int> = _count
+
+    fun load() {
+        viewModelScope.launch {
+            _count.value = repository.getCount()
+        }
+    }
+}
+```
+
+**Resultado esperado**: al llamar `viewModel.load()` en un test o desde la UI, `count.value` toma el valor `42` sin crear manualmente ninguna instancia de dependencia.
+
+</details>
+
