@@ -172,13 +172,12 @@ Study UX se mantiene por curso (aislado por `course-id`):
 - `01-junior/entregables-nivel-junior.md`
 - `02-midlevel/entregables-nivel-midlevel.md`
 
-## Control de calidad pedagógica
+## Documentación estable del curso
 
-El estado de auditoría y mejora continua de las lecciones avanzadas se registra en `00-informe/REVISION-PEDAGOGICA.md` para mantener trazabilidad de brechas detectadas y reescrituras aplicadas.
-
-## Refuerzo de equivalencia con iOS
-
-La auditoría de brechas y la propuesta reforzada de implementación se documentan en [`00-informe/AUDITORIA-EQUIVALENCIA-IOS-ANDROID.md`](../stack-my-architecture-android/00-informe/AUDITORIA-EQUIVALENCIA-IOS-ANDROID.md), [`00-informe/PLAN-REFUERZO-CURSO-ANDROID.md`](../stack-my-architecture-android/00-informe/PLAN-REFUERZO-CURSO-ANDROID.md) y [`00-informe/MEJORAS-POR-MODULO-Y-EVIDENCIAS.md`](../stack-my-architecture-android/00-informe/MEJORAS-POR-MODULO-Y-EVIDENCIAS.md).
+- `00-informe/INFORME-CURSO.md`
+- `00-informe/MATRIZ-COMPETENCIAS.md`
+- `00-informe/RUBRICA-GATES-POR-FASE.md`
+- `00-informe/SCORECARD-EMPLEABILIDAD.md`
 
 ## Progreso y evaluación
 
@@ -200,4 +199,4 @@ La auditoría de brechas y la propuesta reforzada de implementación se document
 
 ## Cierre de recorrido
 
-El curso queda cerrado en contenido con una ruta completa desde fundamentos hasta operación y criterio profesional de Android en contexto real. La continuidad recomendada está descrita en [`04-maestria/10-plan-de-90-dias-despues-del-curso.md`](../stack-my-architecture-android/04-maestria/10-plan-de-90-dias-despues-del-curso.md), en [`04-maestria/11-epilogo-profesional-y-siguientes-retos.md`](../stack-my-architecture-android/04-maestria/11-epilogo-profesional-y-siguientes-retos.md) y en el cierre global de entrega [`00-informe/CIERRE-FINAL-CURSO.md`](../stack-my-architecture-android/00-informe/CIERRE-FINAL-CURSO.md).
+El curso queda cerrado en contenido con una ruta completa desde fundamentos hasta operación y criterio profesional de Android en contexto real. La continuidad recomendada está descrita en [`04-maestria/10-plan-de-90-dias-despues-del-curso.md`](../stack-my-architecture-android/04-maestria/10-plan-de-90-dias-despues-del-curso.md) y en [`04-maestria/11-epilogo-profesional-y-siguientes-retos.md`](../stack-my-architecture-android/04-maestria/11-epilogo-profesional-y-siguientes-retos.md).
