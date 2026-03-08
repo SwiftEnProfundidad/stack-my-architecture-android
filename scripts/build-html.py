@@ -39,9 +39,9 @@ def compute_asset_version(asset_names: list[str]) -> str:
 # Orden de los archivos (segun README)
 FILE_ORDER = [
     "00-informe/INFORME-CURSO.md",
-    "00-informe/AUDITORIA-EQUIVALENCIA-IOS-ANDROID.md",
-    "00-informe/PLAN-REFUERZO-CURSO-ANDROID.md",
-    "00-informe/MEJORAS-POR-MODULO-Y-EVIDENCIAS.md",
+    "00-informe/MATRIZ-COMPETENCIAS.md",
+    "00-informe/RUBRICA-GATES-POR-FASE.md",
+    "00-informe/SCORECARD-EMPLEABILIDAD.md",
     "00-nivel-cero/00-introduccion.md",
     "00-nivel-cero/00-setup.md",
     "00-nivel-cero/01-que-es-software.md",

@@ -25,9 +25,9 @@ REQUIRED_DIRS = [
 REQUIRED_FILES = [
     "README.md",
     "00-informe/INFORME-CURSO.md",
-    "00-informe/AUDITORIA-EQUIVALENCIA-IOS-ANDROID.md",
-    "00-informe/PLAN-REFUERZO-CURSO-ANDROID.md",
-    "00-informe/MEJORAS-POR-MODULO-Y-EVIDENCIAS.md",
+    "00-informe/MATRIZ-COMPETENCIAS.md",
+    "00-informe/RUBRICA-GATES-POR-FASE.md",
+    "00-informe/SCORECARD-EMPLEABILIDAD.md",
     "scripts/build-html.py",
     "05-proyecto-final/00-brief-ruralgo-fieldops.md",
     "05-proyecto-final/01-rubrica-empleabilidad.md",
