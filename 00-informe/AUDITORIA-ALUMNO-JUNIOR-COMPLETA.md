@@ -6,6 +6,56 @@
 
 ---
 
+## Addendum de reconciliación 2026-03-08
+
+Esta auditoría conserva su valor como foto histórica de `2026-02-16`, pero varias conclusiones de ejecución ya quedaron superadas por cambios posteriores en el proyecto real. Para no dejar una señal falsa en el repositorio, el estado reconciliado hoy es este:
+
+1. **Retrofit/OkHttp ya no es una brecha abierta.**
+   - Existe `core/network/NetworkDataSource.kt` con `RetrofitNetworkDataSource`.
+   - Existe `core/network/di/NetworkModule.kt` con `OkHttpClient`, `Retrofit`, `Moshi` y `FieldOpsApi`.
+2. **WorkManager ya no es una brecha abierta.**
+   - Existen `feature/tasks/sync/TaskSyncWorker.kt` y `TaskSyncScheduler.kt`.
+   - `FieldOpsApplication.kt` integra el scheduler y `HiltWorkerFactory`.
+3. **Compose UI testing ya no está a cero.**
+   - Existe `feature/tasks/src/androidTest/.../TaskListScreenTest.kt` con 4 tests instrumentados de Compose.
+4. **La capa de sync ya tiene evidencia ejecutable parcial.**
+   - Existe `feature/tasks/src/test/.../TaskRepositorySyncTest.kt` con pruebas de `refreshTasks()` y `syncPendingChanges()`.
+5. **Release publication readiness ya no está vacía.**
+   - `app/build.gradle.kts` define `signingConfigs.release`, `buildTypes.release`, `isMinifyEnabled`, `isShrinkResources` y `proguard-rules.pro`.
+6. **Benchmark y baseline profile ya no son módulos vacíos.**
+   - Existen `benchmark/.../StartupBenchmark.kt` y `baselineprofile/.../BaselineProfileGenerator.kt`.
+   - Siguen requiriendo validación real sobre dispositivo/emulador; no deben describirse como “cerrados al 100%”.
+
+### Veredicto reconciliado
+
+El curso Android ya no está en el punto descrito por la versión original de esta auditoría. La foto más honesta hoy es:
+
+- **Junior:** evidencia ejecutable sólida y reforzada.
+- **Midlevel:** evidencia ejecutable parcial, ya no doc-only.
+- **Senior/Maestría:** siguen siendo mayoritariamente doc-driven, aunque con piezas operativas reales ya presentes en release/performance.
+
+### Evidencia fresca validada hoy
+
+- `python3 scripts/build-html.py` -> `PASS` (`80 archivos`, `1350 KB`).
+- `./gradlew :app:assembleDebug testDebugUnitTest lintDebug` -> `PASS`.
+- `TaskListScreenTest.kt` aporta `4` tests instrumentados reales de Compose UI.
+- `TaskRepositorySyncTest.kt` aporta cobertura ejecutable para `refreshTasks()` y `syncPendingChanges()`.
+- La validación de `benchmark` / `baselineprofile` sigue siendo de tipo instrumentation y debe correrse con device/emulador adecuado; su mera existencia ya no permite seguir describiéndolos como módulos vacíos.
+
+### Hallazgos históricos ya cerrados o reducidos
+
+| ID histórico | Estado 2026-03-08 | Nota |
+|---|---|---|
+| P0-1 | ✅ Resuelto | Retrofit/OkHttp ya está implementado |
+| P0-3 | ✅ Resuelto | Hay 4 tests instrumentados de Compose |
+| P0-4 | 🟡 Parcial | Benchmark y baseline profile existen, falta validación runtime real |
+| P0-5 | ✅ Resuelto | Release build type + signing placeholder + ProGuard existen |
+| P1-1 | ✅ Resuelto | WorkManager real ya integrado |
+
+El resto del documento se conserva como evidencia histórica de auditoría. Cuando una fila antigua contradiga este addendum, prevalece este addendum.
+
+---
+
 ## 1) Resumen ejecutivo
 
 **¿Llegué a maestría? NO.**

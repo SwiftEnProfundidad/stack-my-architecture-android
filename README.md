@@ -185,8 +185,8 @@ La auditoría de brechas y la propuesta reforzada de implementación se document
 | Nivel | Doc | Código | Evidencia mínima |
 |---|---|---|---|
 | Nivel Cero | Completado | Pendiente | Lecciones completas; proyecto "Rutina Diaria" pendiente de implementar |
-| Junior | Completado | v1.0 parcial | Auth + Tasks + Room + DataStore + Hilt + 9 unit tests + WorkManager + Retrofit |
-| Midlevel | Completado | En progreso | Retrofit integrado; offline-first sync, integration tests y benchmark pendientes |
+| Junior | Completado | v1.0 reforzado | Auth + Tasks + Room + DataStore + Hilt + Retrofit/OkHttp + WorkManager + tests unitarios/sync + 4 UI tests Compose |
+| Midlevel | Completado | Parcial ejecutable | Retrofit integrado; sync y pruebas de repositorio presentes; benchmark y baseline profile creados, con validación real pendiente |
 | Senior | Completado | Pendiente | Documentación completa; artefactos operativos pendientes |
 | Maestría | Completado | Pendiente | Documentación completa; defensa técnica y publicación pendientes |
 
