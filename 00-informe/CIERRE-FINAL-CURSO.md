@@ -79,15 +79,15 @@ proyecto-android/
 ├── core/common/            ← Result sealed interface
 ├── core/ui/                ← Theme, Compose compartido
 ├── core/testing/           ← MainDispatcherRule, test deps
-├── core/network/           ← FakeNetworkDataSource
+├── core/network/           ← RetrofitNetworkDataSource + FieldOpsApi + DI + tests
 ├── core/database/          ← Room (TaskEntity, TaskDao, DB, DI)
 ├── core/datastore/         ← DataStore preferences (UserPreferences interface)
 ├── feature/onboarding/     ← OnboardingScreen
 ├── feature/auth/           ← LoginViewModel + LoginScreen + AuthRepository
 ├── feature/catalog/        ← Placeholder (v2.0)
-├── feature/tasks/          ← TaskList + TaskDetail + TaskRepository + tests
-├── benchmark/              ← Stub (Midlevel+)
-├── baselineprofile/        ← Stub (Midlevel+)
+├── feature/tasks/          ← TaskList + TaskDetail + TaskRepository + SyncWorker + tests
+├── benchmark/              ← StartupBenchmark (validación con device pendiente)
+├── baselineprofile/        ← BaselineProfileGenerator (validación con device pendiente)
 └── scripts/quality-gates.sh
 ```
 
@@ -99,6 +99,9 @@ Todos los P0 identificados fueron resueltos:
 - CI (GitHub Actions) configurado
 - Doc ↔ code alineados (sección FieldOps en cada nivel)
 - Scripts de validación creados y funcionando
+- Release config real con `buildTypes.release`, signing placeholder y ProGuard
+- Red real integrada con Retrofit/OkHttp + fallback controlado
+- WorkManager integrado con `TaskSyncWorker` + `TaskSyncScheduler`
 
 ### P0 pendientes
 
