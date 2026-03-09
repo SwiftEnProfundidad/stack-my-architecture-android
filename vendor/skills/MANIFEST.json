@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "updated_at": "2026-03-09",
+  "policy": {
+    "precedence": "repo_vendor_over_global_agents",
+    "sync_mode": "generated_from_agents_md"
+  },
+  "skills": [
+    {
+      "name": "enterprise-operating-system",
+      "source": "/Users/juancarlosmerlosalbarracin/.agents/skills/enterprise-operating-system/SKILL.md",
+      "file": "vendor/skills/enterprise-operating-system/SKILL.md",
+      "sha256": "1991fc9c4fe08c1c3f125a88095e060cb623c94e143961ddc21cf75916f51615"
+    },
+    {
+      "name": "android-enterprise-rules",
+      "source": "/Users/juancarlosmerlosalbarracin/.agents/skills/android-enterprise-rules/SKILL.md",
+      "file": "vendor/skills/android-enterprise-rules/SKILL.md",
+      "sha256": "60734682048669a9a410cdcc10da8ecb47b2602124bc7227b31112fde595aed0"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "version": "1.0",
+  "bundles": [
+    {
+      "name": "android-guidelines",
+      "version": "1.0.0",
+      "template": "android-guidelines",
+      "sourcePath": "vendor/skills/android-enterprise-rules/SKILL.md",
+      "enabled": true
+    }
+  ]
+}
