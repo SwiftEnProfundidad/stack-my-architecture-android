@@ -74,7 +74,6 @@ Study UX se mantiene por curso (aislado por `course-id`):
 - `05-proyecto-final`
 - `anexos`
 - `proyecto-android`
-- `docs/management`
 
 ## Avance real por nivel (módulos publicados)
 
