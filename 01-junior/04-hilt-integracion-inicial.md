@@ -232,6 +232,32 @@ Qué pasa si se elimina: Hilt no sabrá cómo construir `TasksRepository`.
 
 Qué pasa si cambias retorno por tipo incorrecto: fallará resolución de dependencia.
 
+**Atención: `@Provides` sin `@Singleton` crea una nueva instancia en cada inyección.** Esto pasa desapercibido con repositorios sin estado, pero provoca errores difíciles de rastrear en cuanto el repositorio guarda caché, abre una conexión a Room o mantiene cualquier estado interno.
+
+```kotlin
+// ❌ Sin @Singleton — cada componente que pida TasksRepository recibe
+// una instancia distinta. Si el repositorio guarda caché local, la caché
+// no se comparte y los consumidores ven datos divergentes.
+@Module
+@InstallIn(SingletonComponent::class)
+object TasksModule {
+    @Provides
+    fun provideTasksRepository(): TasksRepository = TasksRepositoryImpl()
+}
+
+// ✅ Con @Singleton — el contenedor crea la instancia una vez y la
+// reutiliza durante toda la vida del SingletonComponent (la app).
+@Module
+@InstallIn(SingletonComponent::class)
+object TasksModule {
+    @Provides
+    @Singleton
+    fun provideTasksRepository(): TasksRepository = TasksRepositoryImpl()
+}
+```
+
+Regla general: si instalas en `SingletonComponent`, añade `@Singleton` al proveedor. Si instalas en `ViewModelComponent` o `ActivityRetainedComponent`, usa el scope correspondiente (`@ViewModelScoped`).
+
 ---
 
 ## 6) Paso 4 · Inyectar en ViewModel

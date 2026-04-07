@@ -98,6 +98,50 @@ class TasksViewModel(
 
 Explicación paso a paso. El ViewModel recibe el repositorio por constructor. Mantiene un estado privado mutable y lo expone como solo lectura. Recibe eventos con `onEvent`. Tanto al iniciar pantalla como al pulsar reintentar ejecuta la misma función `loadTasks`. Durante carga activa `isLoading`. Si todo va bien, publica tareas. Si falla, publica error.
 
+**Atención: `throwable.message` no es un mensaje de usuario.** El campo `.message` de una excepción es texto técnico, puede ser nulo o estar en inglés. Si llega directamente a `errorMessage`, la pantalla mostrará texto que el usuario no entiende.
+
+```kotlin
+// ❌ Error técnico llegando crudo a la UI
+.onFailure { throwable ->
+    _uiState.value = TasksUiState(
+        isLoading = false,
+        errorMessage = throwable.message ?: "No se pudieron cargar las tareas"
+        // throwable.message puede ser: "timeout", null, o un stack técnico.
+        // El fallback manual cubre el caso nulo pero no el mensaje técnico.
+    )
+}
+
+// ✅ El repositorio traduce errores técnicos a semántica de negocio
+class TasksRepositoryImpl(private val api: TasksApi) : TasksRepository {
+    override suspend fun getTasks(): List<String> {
+        return try {
+            api.fetchTasks()
+        } catch (e: IOException) {
+            throw TasksException.NoConnection
+        } catch (e: HttpException) {
+            throw TasksException.ServiceUnavailable
+        }
+    }
+}
+
+sealed class TasksException : Exception() {
+    data object NoConnection      : TasksException()
+    data object ServiceUnavailable : TasksException()
+}
+
+// El ViewModel maneja tipos de negocio, no excepciones técnicas:
+.onFailure { error ->
+    val message = when (error) {
+        is TasksException.NoConnection       -> "Sin conexión. Comprueba tu red."
+        is TasksException.ServiceUnavailable -> "El servicio no está disponible ahora."
+        else                                 -> "Error inesperado. Inténtalo de nuevo."
+    }
+    _uiState.value = TasksUiState(isLoading = false, errorMessage = message)
+}
+```
+
+En la práctica inicial con `TasksRepositoryImpl` de datos estáticos esto no se aplica porque nunca lanza excepciones. El patrón importa en cuanto conectas a red o base de datos real.
+
 Ahora conectamos la pantalla Compose con ese estado.
 
 ```kotlin

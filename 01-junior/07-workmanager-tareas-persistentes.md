@@ -44,6 +44,40 @@ Para eso, usa lógica normal de UI/ViewModel.
 
 WorkManager está para trabajo que debe sobrevivir a cierres, reinicios o cambios de estado del sistema.
 
+```kotlin
+// ❌ WorkManager para trabajo inmediato — innecesariamente pesado
+//    El usuario pulsa "Guardar" y espera respuesta al instante.
+//    Encolar una petición de WorkManager introduce latencia y
+//    complejidad que no aporta nada aquí.
+fun onSaveButtonClicked(task: Task) {
+    val request = OneTimeWorkRequestBuilder<SaveTaskWorker>()
+        .setInputData(workDataOf("id" to task.id))
+        .build()
+    workManager.enqueue(request)
+    // El usuario no sabrá cuándo terminó; no hay resultado directo.
+}
+
+// ✅ Corrutina de ViewModel para trabajo que el usuario necesita ahora
+fun onSaveButtonClicked(task: Task) {
+    viewModelScope.launch {
+        runCatching { repository.saveTask(task) }
+            .onSuccess { _uiState.value = _uiState.value.copy(isSaved = true) }
+            .onFailure { _uiState.value = _uiState.value.copy(errorMessage = "No se pudo guardar") }
+    }
+    // Respuesta inmediata: UI refleja resultado en el mismo evento del usuario.
+}
+
+// ✅ WorkManager para trabajo que sobrevive al cierre de la app
+//    El usuario sube fotos en background; da igual si cierra la app.
+fun schedulePhotoUpload(photoId: String) {
+    val request = OneTimeWorkRequestBuilder<UploadPhotoWorker>()
+        .setInputData(workDataOf("photo_id" to photoId))
+        .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+        .build()
+    workManager.enqueueUniqueWork("upload_$photoId", ExistingWorkPolicy.KEEP, request)
+}
+```
+
 ---
 
 ## 3) Diagrama de flujo de ejecución

@@ -63,6 +63,29 @@ Vamos línea por línea para fijar criterio. `CatalogUiState` es una foto de la 
 
 Este diseño parece simple, y justamente por eso es robusto. Cuando el equipo crece, todos hablan el mismo idioma: estado y eventos. No hay banderas escondidas en sitios aleatorios.
 
+**Atención: el estado con booleanos sueltos permite combinaciones imposibles.** Con `isLoading`, `items` y `errorMessage` como campos independientes, nada impide que el compilador cree un estado inconsistente:
+
+```kotlin
+// ❌ Estado imposible pero compilable — ¿qué muestra la UI?
+CatalogUiState(
+    isLoading = true,
+    items = listOf("Kotlin"),  // ¿Cargando Y con datos?
+    errorMessage = "Sin conexión" // ¿Cargando Y con error?
+)
+
+// ✅ A medida que la pantalla crece, considera un sealed class para forzar exclusividad:
+sealed interface CatalogUiState {
+    data object Loading : CatalogUiState
+    data class Success(val items: List<String>) : CatalogUiState
+    data object Empty : CatalogUiState
+    data class Error(val message: String) : CatalogUiState
+}
+// Con sealed class, el compilador exige manejar cada caso en un `when` exhaustivo.
+// Imposible estar en Loading y Error al mismo tiempo.
+```
+
+Para Junior es aceptable empezar con el `data class` de booleanos — es más fácil de leer. Migra al `sealed interface` cuando la pantalla tenga 3 o más estados diferenciados y las combinaciones imposibles empiecen a introducir bugs.
+
 Ahora observa cómo se conecta con un ViewModel inicial.
 
 ```kotlin
@@ -125,25 +148,75 @@ class CatalogRepositoryImpl : CatalogRepository {
 
 En este punto quizá te preguntes: ¿dónde entra la capa Domain opcional? Respuesta simple. Entra cuando empiezas a tener reglas de negocio que se repiten entre pantallas o que necesitan aislarse de detalles técnicos.
 
-Por ejemplo, si varias pantallas necesitan aplicar la misma regla de filtrado o priorización, puedes crear un caso de uso en Domain. Así evitas duplicación y mantienes lógica de negocio en un sitio claro.
-
-Un caso de uso opcional de ejemplo sería este.
-
 ```kotlin
-class GetCatalogUseCase(
-    private val repository: CatalogRepository
-) {
-    suspend operator fun invoke(): List<String> {
-        return repository.getCatalog().sorted()
+// ❌ Sin Domain: la regla de ordenar/filtrar vive en el ViewModel
+// Si dos ViewModels necesitan la misma regla, la duplican
+class CatalogViewModel(private val repository: CatalogRepository) : ViewModel() {
+    private fun loadCatalog() {
+        viewModelScope.launch {
+            val items = repository.getCatalog().sorted() // regla duplicada en cada ViewModel
+            _uiState.value = CatalogUiState(items = items)
+        }
     }
+}
+
+class SearchViewModel(private val repository: CatalogRepository) : ViewModel() {
+    fun search(query: String) {
+        viewModelScope.launch {
+            val items = repository.getCatalog()
+                .sorted()           // misma regla duplicada
+                .filter { it.contains(query, ignoreCase = true) }
+            _uiState.value = SearchUiState(results = items)
+        }
+    }
+}
+
+// ✅ Con Domain: la regla vive en un UseCase reutilizable
+class GetCatalogUseCase(private val repository: CatalogRepository) {
+    suspend operator fun invoke(): List<String> =
+        repository.getCatalog().sorted()
+    // CatalogViewModel y SearchViewModel usan el mismo UseCase.
+    // Si mañana cambia la regla de ordenación, cambias un solo sitio.
 }
 ```
 
-No lo añadimos por moda. Lo añadimos cuando aporta valor real.
+La señal para añadir Domain es concreta: cuando copies y pegues la misma lógica entre dos ViewModels, extráela a un UseCase. No lo añadas antes — la simplicidad tiene valor.
 
 Ahora vamos a aterrizar buenas prácticas que debes llevarte desde hoy. La primera es mantener composables tontos y ViewModels listos. Composable debe renderizar estado y emitir eventos. ViewModel debe procesar eventos y transformar estado.
 
 La segunda es evitar que errores de infraestructura lleguen crudos a UI. UI no necesita stacktrace. UI necesita mensajes entendibles y estados consistentes.
+
+```kotlin
+// ❌ Error de red crudo llegando a UI — el usuario ve algo sin sentido
+.onFailure { error ->
+    _uiState.value = CatalogUiState(errorMessage = error.message)
+    // error.message puede ser: "Unable to resolve host 'api.example.com': No address..."
+    // o null, o un stacktrace. El usuario no sabe qué hacer con eso.
+}
+
+// ✅ El repositorio traduce el error técnico a semántica de negocio
+class CatalogRepositoryImpl : CatalogRepository {
+    override suspend fun getCatalog(): List<String> {
+        return try {
+            api.fetchCatalog()
+        } catch (e: IOException) {
+            throw CatalogException.NoConnection  // error de negocio, no de red
+        } catch (e: HttpException) {
+            throw CatalogException.ServiceUnavailable
+        }
+    }
+}
+
+// El ViewModel maneja excepciones de negocio, no técnicas:
+.onFailure { error ->
+    val message = when (error) {
+        is CatalogException.NoConnection -> "Sin conexión. Inténtalo de nuevo."
+        is CatalogException.ServiceUnavailable -> "El servicio no está disponible."
+        else -> "Error inesperado."
+    }
+    _uiState.value = CatalogUiState(errorMessage = message)
+}
+```
 
 La tercera es no mezclar navegación con lógica de negocio. Navegación en capa de navegación. Lógica en ViewModel y repositorios.
 

@@ -284,6 +284,52 @@ Qué pasa si eliminas `clearAll` en estrategia de reemplazo total: podrías deja
 
 ---
 
+## 7b) Conectar Room con Hilt
+
+Esta pieza suele faltar en tutoriales: sin un módulo Hilt que provea `AppDatabase` y `TasksDao`, no puedes inyectar el DAO en `TasksRepositoryRoom`.
+
+```kotlin
+@Module
+@InstallIn(SingletonComponent::class)
+object DatabaseModule {
+
+    // @Singleton es obligatorio: Room crea la conexión a SQLite una sola vez.
+    // Sin @Singleton, cada inyección abriría una nueva instancia de DB.
+    @Provides
+    @Singleton
+    fun provideAppDatabase(
+        @ApplicationContext context: Context
+    ): AppDatabase {
+        return Room.databaseBuilder(
+            context,
+            AppDatabase::class.java,
+            "app_database"
+        ).build()
+    }
+
+    // @Provides sin @Singleton está bien aquí: TasksDao no tiene estado propio,
+    // solo delega en la DB. La DB sigue siendo singleton.
+    @Provides
+    fun provideTasksDao(db: AppDatabase): TasksDao = db.tasksDao()
+}
+
+// Repositorio inyectado con el DAO ya disponible:
+@Module
+@InstallIn(SingletonComponent::class)
+object TasksDataModule {
+    @Provides
+    @Singleton
+    fun provideTasksRepository(dao: TasksDao): TasksRepository =
+        TasksRepositoryRoom(dao)
+}
+```
+
+Qué problema resuelve: `@Singleton` en `AppDatabase` garantiza una única conexión a SQLite. Varias instancias pueden causar lecturas inconsistentes o incluso bloqueos de escritura.
+
+Qué pasa si olvidas `@Singleton` en `AppDatabase`: Hilt crea una conexión nueva en cada punto de inyección — lento, costoso y propenso a bugs de concurrencia.
+
+---
+
 ## 8) Integración con ViewModel y UI
 
 ViewModel debe exponer `StateFlow` y la UI debe colectar lifecycle-aware.
